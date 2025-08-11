@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Detalle Venta #{{ venta.id }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-6">
+  <h1 class="text-3xl font-bold mb-6 text-green-400 flex items-center gap-2">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    Detalle de Venta #{{ venta.id }}
+  </h1>
+
+  <div class="bg-gray-900 text-white p-6 rounded-lg shadow-lg mb-6">
+    <p><strong>Fecha:</strong> {{ venta.fecha|date:"d/m/Y H:i" }}</p>
+    <p><strong>Usuario:</strong> {{ venta.usuario.get_full_name|default:venta.usuario.username }}</p>
+    <p><strong>Método de Pago:</strong> {{ metodo_pago_texto }}</p>
+    <p><strong>Total:</strong> ${{ venta.total|floatformat:2 }}</p>
+    <p><strong>Estado:</strong> {% if venta.anulada %}Anulada{% else %}Activa{% endif %}</p>
+  </div>
+
+  <h2 class="text-2xl font-semibold mb-4 text-green-400">Productos</h2>
+  <div class="overflow-x-auto bg-gray-900 rounded-lg shadow-lg">
+    <table class="w-full text-left border-collapse text-sm">
+      <thead class="bg-green-800 text-white">
+        <tr>
+          <th class="border px-4 py-2">Producto</th>
+          <th class="border px-4 py-2 text-center">Cantidad</th>
+          <th class="border px-4 py-2 text-right">Precio Unitario</th>
+          <th class="border px-4 py-2 text-right">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody class="bg-gray-800 text-white">
+        {% for detalle in detalles %}
+        <tr>
+          <td class="border px-4 py-2">{{ detalle.producto.nombre }}</td>
+          <td class="border px-4 py-2 text-center">{{ detalle.cantidad }}</td>
+          <td class="border px-4 py-2 text-right">${{ detalle.producto.precio|floatformat:2 }}</td>
+          <td class="border px-4 py-2 text-right">${{ detalle.subtotal|floatformat:2 }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="border px-4 py-2 text-center">No hay detalles para esta venta.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot class="bg-green-900 font-bold text-white">
+        <tr>
+          <td colspan="3" class="border px-4 py-2 text-right">Total:</td>
+          <td class="border px-4 py-2 text-right">${{ venta.total|floatformat:2 }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="mt-6 flex gap-4">
+    <a href="{% url 'ventas:export_venta_pdf' venta.id %}" class="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+      Exportar PDF
+    </a>
+    <a href="{% url 'ventas:lista_ventas' %}" class="py-2 px-4 bg-gray-600 text-white rounded hover:bg-gray-700 transition">
+      Volver a la lista
+    </a>
+    {% if not venta.anulada and user_has_permission %}
+    <a href="{% url 'ventas:anular_venta' venta.id %}" class="py-2 px-4 bg-red-600 text-white rounded hover:bg-red-700 transition">
+      Anular Venta
+    </a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

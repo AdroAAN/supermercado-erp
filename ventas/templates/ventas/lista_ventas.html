@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Ventas{% endblock %}
+
+{% block content %}
+
+<!-- Barra superior con botones y sombra -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4 p-6
+            bg-gradient-to-r from-[#064e3b] via-[#065f46] to-[#047857]
+            rounded-lg shadow-lg border border-lime-700 max-w-full overflow-hidden">
+  <h1 class="text-3xl font-extrabold text-lime-300 tracking-tight flex items-center gap-2 select-none">
+    <i data-lucide="shopping-cart" class="w-7 h-7 stroke-lime-400"></i>
+    Lista de Ventas
+  </h1>
+
+  <div class="flex flex-wrap gap-3 max-w-full min-w-0">
+    <!-- Tus botones actuales pero con colores actualizados -->
+    <a href="{% url 'ventas:reporte_ventas' %}"
+      class="inline-flex items-center gap-2 bg-lime-500 hover:bg-lime-600 text-gray-900 font-semibold
+             px-5 py-2 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-offset-1
+             flex-shrink-0 min-w-[130px]"
+      aria-label="Ir a Reporte de Ventas">
+      <i data-lucide="bar-chart-2" class="w-5 h-5 stroke-lime-700"></i>Reporte de Ventas
+    </a>
+
+    <a href="{% url 'ventas:export_ventas_excel' %}"
+      class="inline-flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-semibold
+             px-5 py-2 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
+             flex-shrink-0 min-w-[130px]"
+      aria-label="Exportar ventas a Excel">
+      <i data-lucide="file-spreadsheet" class="w-5 h-5 stroke-white"></i>Exportar Excel
+    </a>
+
+    <a href="{% url 'ventas:crear_venta' %}"
+      class="inline-flex items-center gap-2 bg-lime-600 hover:bg-lime-700 text-white font-semibold
+             px-5 py-2 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-offset-1
+             flex-shrink-0 min-w-[130px]"
+      aria-label="Crear nueva venta">
+      <i data-lucide="plus-circle" class="w-5 h-5 stroke-white"></i>Nueva Venta
+    </a>
+  </div>
+</div>
+
+<!-- Filtro por estado -->
+<form method="get" class="mb-6 max-w-xs p-5 bg-[#1e293b] rounded-xl border border-gray-600 shadow-md">
+  <label for="estado" class="block mb-2 font-semibold text-gray-300 select-none">Filtrar por estado:</label>
+  <div class="relative">
+    <select name="estado" id="estado" onchange="this.form.submit()"
+            class="appearance-none w-full rounded-md bg-gray-800 text-gray-200 border border-gray-600 px-4 py-2
+                  focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-1 transition-colors duration-200 pr-10 custom-dark-select cursor-pointer"
+            style="-webkit-appearance:none; -moz-appearance:none; appearance:none;">
+      <option value="" {% if estado == '' %}selected{% endif %}>Todas</option>
+      <option value="activas" {% if estado == 'activas' %}selected{% endif %}>Solo activas</option>
+      <option value="anuladas" {% if estado == 'anuladas' %}selected{% endif %}>Solo anuladas</option>
+    </select>
+    <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center px-2 text-gray-400">
+      <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.586l3.71-4.356a.75.75 0 111.14.976l-4.25 5a.75.75 0 01-1.14 0l-4.25-5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+      </svg>
+    </div>
+  </div>
+
+  {% if es_gerente_o_encargado %}
+  <!-- Filtro por usuario -->
+  <label for="usuario" class="block mt-4 mb-2 font-semibold text-gray-300 select-none">Filtrar por cajero:</label>
+  <div class="relative">
+    <select name="usuario" id="usuario" onchange="this.form.submit()"
+            class="appearance-none w-full rounded-md bg-gray-800 text-gray-200 border border-gray-600 px-4 py-2
+                  focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-1 transition-colors duration-200 pr-10 custom-dark-select cursor-pointer"
+            style="-webkit-appearance:none; -moz-appearance:none; appearance:none;">
+      <option value="" {% if usuario_id == '' %}selected{% endif %}>Todos</option>
+      {% for usuario in usuarios_cajeros %}
+      <option value="{{ usuario.id }}" {% if usuario_id|default:'' == usuario.id|stringformat:"s" %}selected{% endif %}>{{ usuario.username }}</option>
+      {% endfor %}
+    </select>
+    <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center px-2 text-gray-400">
+      <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.586l3.71-4.356a.75.75 0 111.14.976l-4.25 5a.75.75 0 01-1.14 0l-4.25-5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+      </svg>
+    </div>
+  </div>
+  {% endif %}
+</form>
+
+<!-- Contenedor general para limitar ancho y añadir padding -->
+<div class="max-w-full px-4 sm:px-6 lg:px-8">
+
+  <!-- Tabla de ventas con scroll horizontal dentro -->
+  <div class="overflow-x-auto rounded-xl border border-gray-700 shadow-lg" style="max-width: 100%; position: relative;">
+    <table id="tabla-ventas" class="min-w-full divide-y divide-gray-700 text-white text-sm display" style="width:100%; min-width:600px; max-width: 100%; table-layout: auto;">
+      <thead class="bg-gradient-to-r from-gray-900 to-gray-800 text-lime-300 uppercase text-xs font-semibold select-none">
+        <tr>
+          <th class="px-4 py-3 text-left whitespace-nowrap">ID</th>
+          <th class="px-4 py-3 text-left whitespace-nowrap">Fecha</th>
+          <th class="px-4 py-3 text-left whitespace-nowrap">Cajero</th>
+          <th class="px-4 py-3 text-left whitespace-nowrap">Total</th>
+          {% if es_gerente_o_encargado %}
+            <th class="px-4 py-3 text-left whitespace-nowrap max-w-[180px]">Acciones</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody class="bg-gray-900 divide-y divide-gray-700">
+        {% for venta in ventas %}
+        <tr class="transition-all duration-200
+          {% if venta.anulada %}bg-red-950 text-red-400 line-through
+          {% else %}hover:bg-gray-800 cursor-pointer
+          {% endif %}
+          {% if forloop.counter0|divisibleby:2 and not venta.anulada %}bg-gray-800{% endif %}">
+          <td class="px-4 py-3 whitespace-nowrap font-mono font-semibold">{{ venta.id }}</td>
+          <td class="px-4 py-3 whitespace-nowrap">{{ venta.fecha|date:"Y-m-d H:i" }}</td>
+          <td class="px-4 py-3 whitespace-nowrap">{{ venta.usuario.get_full_name|default:venta.usuario.username }}</td>
+          <td class="px-4 py-3 whitespace-nowrap font-semibold text-lime-400">${{ venta.total }}</td>
+          {% if es_gerente_o_encargado %}
+            <td class="px-4 py-3 whitespace-normal flex flex-wrap gap-3 items-center max-w-[180px]">
+              {% if venta.anulada %}
+                <i data-lucide="x-circle" class="w-5 h-5 text-red-400"></i>
+                <span class="italic text-gray-400">Anulada</span>
+              {% else %}
+                <a href="{% url 'ventas:detalle_venta' venta.id %}"
+                  class="text-lime-400 hover:text-lime-300 flex items-center gap-1 font-medium transition-colors duration-200 flex-shrink-0 min-w-[50px]"
+                  aria-label="Ver venta {{ venta.id }}">
+                  <i data-lucide="eye" class="w-4 h-4"></i>Ver
+                </a>
+                <a href="{% url 'ventas:editar_venta' venta.id %}"
+                  class="text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium transition-colors duration-200 flex-shrink-0 min-w-[50px]"
+                  aria-label="Editar venta {{ venta.id }}">
+                  <i data-lucide="edit-2" class="w-4 h-4"></i>Editar
+                </a>
+                <a href="{% url 'ventas:anular_venta' venta.id %}"
+                  class="text-red-500 hover:text-red-400 flex items-center gap-1 font-medium transition-colors duration-200 flex-shrink-0 min-w-[50px]"
+                  aria-label="Anular venta {{ venta.id }}">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>Anular
+                </a>
+                <a href="{% url 'ventas:historial_venta' venta.id %}"
+                  class="text-purple-400 hover:text-purple-300 flex items-center gap-1 font-medium transition-colors duration-200 flex-shrink-0 min-w-[50px]"
+                  aria-label="Historial de venta {{ venta.id }}">
+                  <i data-lucide="clock" class="w-4 h-4"></i>Historial
+                </a>
+              {% endif %}
+            </td>
+          {% endif %}
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="{% if es_gerente_o_encargado %}5{% else %}4{% endif %}" class="px-6 py-8 text-center text-gray-500 italic font-semibold select-none">
+            No hay ventas registradas.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  $(document).ready(function () {
+    $('#tabla-ventas').DataTable({
+      language: {
+        url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+      },
+      pagingType: 'simple_numbers',
+      stripeClasses: [],
+      order: [[1, 'desc']],
+      columnDefs: [
+        {% if es_gerente_o_encargado %}
+          { orderable: false, targets: 4 }
+        {% endif %}
+      ],
+      responsive: true,
+      autoWidth: false,
+      lengthMenu: [[5,10,25,50,-1],[5,10,25,50,"Todos"]],
+      scrollX: true,
+      initComplete: function () {
+        if (window.lucide) {
+          window.initLucideIcons();
+        }
+      }
+    });
+  });
+</script>
+
+<style>
+  div.dataTables_wrapper {
+    color: #d9f99d; /* verde-lima claro */
+    background-color: #111827;
+    border: 1px solid #374151;
+    border-radius: 1rem;
+    padding: 1rem;
+    overflow-x: auto;
+  }
+
+  /* Mejorar scroll en iOS */
+  .dataTables_scrollBody {
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  table.dataTable thead {
+    background: linear-gradient(90deg, #064e3b 0%, #047857 100%) !important;
+    color: #bef264 !important;
+  }
+
+  table.dataTable tbody tr {
+    background-color: #111827 !important;
+    color: #d9f99d !important;
+    border-bottom: 1px solid #374151 !important;
+    transition: background-color 0.3s ease !important;
+  }
+
+  table.dataTable tbody tr:nth-child(even) {
+    background-color: #1e293b !important;
+  }
+
+  table.dataTable tbody tr:hover {
+    background-color: #4d7c0f !important;
+    color: #fef3c7 !important;
+  }
+
+  .dataTables_paginate a,
+  .dataTables_length select,
+  .dataTables_filter input {
+    background-color: #1f2937 !important;
+    color: #d9f99d !important;
+    border: 1px solid #4d7c0f !important;
+    border-radius: 0.375rem !important;
+  }
+
+  .dataTables_paginate a:hover {
+    background-color: #84cc16 !important;
+    color: #111827 !important;
+  }
+
+  .dataTables_filter label {
+    color: #d9f99d !important;
+  }
+
+  a {
+    transition: color 0.2s ease, transform 0.1s ease;
+  }
+
+  a:hover {
+    transform: scale(1.05);
+    text-decoration: underline;
+  }
+
+  select.custom-dark-select {
+    background-color: #1f2937 !important;
+    color: #d9f99d !important;
+    border-color: #4d7c0f !important;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+
+  a.bg-lime-600 {
+    background-color: #4d7c0f !important;
+  }
+
+  a.bg-blue-700 {
+    background-color: #0369a1 !important;
+  }
+
+  a.bg-emerald-600 {
+    background-color: #15803d !important;
+  }
+
+  @media (max-width: 640px) {
+    table.dataTable,
+    table.dataTable th,
+    table.dataTable td {
+      white-space: normal !important;
+      padding-left: 0.5rem !important;
+      padding-right: 0.5rem !important;
+    }
+    td.flex.flex-wrap {
+      max-width: 150px !important;
+    }
+    div.flex.flex-wrap.gap-3.max-w-full > a {
+      padding-left: 0.75rem !important;
+      padding-right: 0.75rem !important;
+      font-size: 0.875rem !important;
+      min-width: auto !important;
+      flex-shrink: 1 !important;
+      white-space: normal !important;
+      word-break: break-word !important;
+    }
+    div.overflow-x-auto {
+      max-width: 100%;
+      overflow-x: auto;
+      max-height: 70vh;
+    }
+  }
+</style>
+{% endblock %}

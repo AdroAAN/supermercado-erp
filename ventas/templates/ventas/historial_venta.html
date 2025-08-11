@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Historial de Venta #{{ venta.id }}{% endblock %}
+
+{% block content %}
+  <h2 class="text-2xl font-bold mb-6 text-lime-400">Historial de Venta #{{ venta.id }}</h2>
+
+  <div class="bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+    <h3 class="text-lg font-semibold mb-4">Resumen de la Venta</h3>
+    <p><strong>Fecha:</strong> {{ venta.fecha|date:"d/m/Y H:i" }}</p>
+    <p><strong>Método de Pago:</strong> {{ venta.get_metodo_pago_display }}</p>
+    <p><strong>Total:</strong> ${{ venta.total|floatformat:2|intcomma }}</p>
+    <p><strong>Estado:</strong> {% if venta.anulada %}Anulada{% else %}Activa{% endif %}</p>
+    {% if venta.anulada and venta.motivo_anulacion %}
+      <p><strong>Motivo de Anulación:</strong> {{ venta.motivo_anulacion }}</p>
+    {% endif %}
+    <h4 class="text-md font-semibold mt-4 mb-2">Productos:</h4>
+    {% if venta.detalles.all %}
+      <table class="min-w-full bg-gray-900 rounded-lg">
+        <thead>
+          <tr class="bg-lime-600 text-white">
+            <th class="px-4 py-2 text-left">Producto</th>
+            <th class="px-4 py-2 text-right">Cantidad</th>
+            <th class="px-4 py-2 text-right">Precio Unitario</th>
+            <th class="px-4 py-2 text-right">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for detalle in venta.detalles.all %}
+            <tr class="border-b border-gray-700">
+              <td class="px-4 py-2">{{ detalle.producto.nombre }}</td>
+              <td class="px-4 py-2 text-right">{{ detalle.cantidad }}</td>
+              <td class="px-4 py-2 text-right">${{ detalle.producto.precio|floatformat:2|intcomma }}</td>
+              <td class="px-4 py-2 text-right">${{ detalle.subtotal|floatformat:2|intcomma }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>Sin productos</p>
+    {% endif %}
+  </div>
+
+  <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+    <table class="min-w-full bg-gray-900">
+      <thead>
+        <tr class="bg-lime-600 text-white">
+          <th class="px-4 py-2">Fecha / Hora</th>
+          <th class="px-4 py-2">Usuario</th>
+          <th class="px-4 py-2">Acción</th>
+          <th class="px-4 py-2">Resumen de Cambios</th>
+          <th class="px-4 py-2">Comparar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for actual, siguiente, cambios in pares_historial %}
+          <tr class="border-b border-gray-700">
+            <td class="px-4 py-2">{{ actual.history_date|date:"d/m/Y H:i:s" }}</td>
+            <td class="px-4 py-2">{{ actual.history_user|default:"Sistema" }}</td>
+            <td class="px-4 py-2">{{ actual.get_history_type_display }}</td>
+            <td class="px-4 py-2">
+              {% if cambios %}
+                {% for diff in cambios %}
+                  {% if diff.field|slice:"0:8" == "detalle_" %}
+                    {{ diff.field|slice:"8:"|title }}:
+                    {% if diff.old and diff.old.status == 'eliminado' %}
+                      Eliminado (Cantidad: {{ diff.old.cantidad }}, Precio: ${{ diff.old.precio_unitario|floatformat:2|intcomma }}, Subtotal: ${{ diff.old.subtotal|floatformat:2|intcomma }}, Stock: {{ diff.old.stock }} → {{ diff.new|default:diff.old.stock }})
+                    {% elif diff.new and diff.new.status == 'añadido' %}
+                      Añadido (Cantidad: {{ diff.new.cantidad }}, Precio: ${{ diff.new.precio_unitario|floatformat:2|intcomma }}, Subtotal: ${{ diff.new.subtotal|floatformat:2|intcomma }}, Stock: {{ diff.new.stock }} ← {{ diff.old|default:diff.new.stock }})
+                    {% else %}
+                      Cantidad: {{ diff.old.cantidad }} → {{ diff.new.cantidad }},
+                      Precio: ${{ diff.old.precio_unitario|floatformat:2|intcomma }} → ${{ diff.new.precio_unitario|floatformat:2|intcomma }},
+                      Subtotal: ${{ diff.old.subtotal|floatformat:2|intcomma }} → ${{ diff.new.subtotal|floatformat:2|intcomma }},
+                      Stock: {{ diff.old.stock }} → {{ diff.new.stock }}
+                    {% endif %}
+                  {% else %}
+                    {{ diff.field|title }}:
+                    {% if diff.old != None %}
+                      De
+                      {% if diff.field in 'total,subtotal' %}
+                        ${{ diff.old|floatformat:2|intcomma }}
+                      {% elif diff.field == 'fecha' %}
+                        {{ diff.old|date:"d/m/Y H:i:s" }}
+                      {% else %}
+                        {{ diff.old|default:"—" }}
+                      {% endif %}
+                      a
+                      {% if diff.field in 'total,subtotal' %}
+                        ${{ diff.new|floatformat:2|intcomma }}
+                      {% elif diff.field == 'fecha' %}
+                        {{ diff.new|date:"d/m/Y H:i:s" }}
+                      {% else %}
+                        {{ diff.new|default:"—" }}
+                      {% endif %}
+                    {% else %}
+                      A
+                      {% if diff.field in 'total,subtotal' %}
+                        ${{ diff.new|floatformat:2|intcomma }}
+                      {% elif diff.field == 'fecha' %}
+                        {{ diff.new|date:"d/m/Y H:i:s" }}
+                      {% else %}
+                        {{ diff.new|default:"—" }}
+                      {% endif %}
+                    {% endif %}
+                  {% endif %}
+                  {% if not forloop.last %}, {% endif %}
+                {% empty %}
+                  Sin cambios
+                {% endfor %}
+              {% else %}
+                Estado actual
+              {% endif %}
+            </td>
+            <td class="px-4 py-2">
+              {% if siguiente %}
+                <a href="{% url 'ventas:comparar_historial_venta' venta.id actual.history_id siguiente.history_id %}" class="text-lime-400 hover:text-lime-300">
+                  Ver cambios
+                </a>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" class="px-4 py-2 text-center">No se encontró historial para esta venta.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-6">
+    <a href="{% url 'ventas:lista_ventas' %}" class="bg-lime-600 text-white px-4 py-2 rounded hover:bg-lime-500">
+      Volver a la lista
+    </a>
+  </div>
+{% endblock %}

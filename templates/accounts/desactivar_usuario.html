@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Desactivar Usuario{% endblock %}
+
+{% block content %}
+<section aria-labelledby="desactivar-usuario-titulo" class="max-w-md mx-auto bg-gradient-to-tr from-[#1f2937] via-[#111827] to-[#1f2937] rounded-xl p-8 shadow-2xl border border-gray-700">
+  <h2 id="desactivar-usuario-titulo" class="text-2xl font-extrabold text-yellow-400 mb-6 flex items-center gap-3 select-none">
+    <i data-lucide="user-minus" class="w-7 h-7"></i>
+    Confirmar desactivación de usuario
+  </h2>
+  <p class="mb-6 text-gray-300">
+    Estás a punto de desactivar al usuario: <strong class="text-white">{{ usuario.username }}</strong>.<br>
+    Esta acción <span class="font-semibold text-yellow-300">no eliminará el usuario</span>, pero impedirá su acceso al sistema.
+  </p>
+  
+  <form method="post" class="space-y-6" novalidate>
+    {% csrf_token %}
+    <div class="flex justify-between gap-4">
+      <button type="submit" 
+              class="inline-flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 focus-visible:outline focus-visible:outline-4 focus-visible:outline-yellow-300 text-black font-bold py-3 px-6 rounded-lg shadow-lg transition transform active:scale-95">
+        <i data-lucide="check-circle" class="w-5 h-5"></i>
+        Sí, desactivar
+      </button>
+      <a href="{% url 'accounts:listar_usuarios' %}" 
+         class="inline-flex items-center gap-2 bg-gray-600 hover:bg-gray-700 focus-visible:outline focus-visible:outline-4 focus-visible:outline-gray-500 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition">
+        <i data-lucide="x-circle" class="w-5 h-5"></i>
+        Cancelar
+      </a>
+    </div>
+  </form>
+</section>
+{% endblock %}

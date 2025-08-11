@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Productos{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+  <!-- Header con botones -->
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold text-acento">Gestión de Productos</h2>
+    <div class="flex gap-4">
+      <button id="btnCrearProducto" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded flex items-center gap-2 transition">
+        <i data-lucide="plus" class="w-5 h-5"></i> Nuevo producto
+      </button>
+      <button id="btnCrearCategoria" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded flex items-center gap-2 transition">
+        <i data-lucide="tag" class="w-5 h-5"></i> Nueva categoría
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabla de productos -->
+  <div class="overflow-x-auto bg-soft rounded-lg shadow-lg mb-8">
+    <table class="w-full border-collapse" id="tablaProductos">
+      <thead class="bg-gray-700 text-white">
+        <tr>
+          <th class="p-3 text-center">Imagen</th>
+          <th class="p-3 text-left">Nombre</th>
+          <th class="p-3 text-left">Categoría</th>
+          <th class="p-3 text-right">Precio</th>
+          <th class="p-3 text-center">Stock</th>
+          <th class="p-3 text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for producto in productos %}
+        <tr class="border-b border-gray-600 hover:bg-gray-700/50 transition" data-id="{{ producto.id }}">
+          <td class="p-3 text-center">
+            {% if producto.imagen %}
+              <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}"
+                   width="50" height="50"
+                   class="rounded-full cursor-pointer hover:opacity-80 transition modal-imagen-trigger"
+                   data-src="{{ producto.imagen.url }}">
+            {% else %}
+              <span class="text-muted">Sin imagen</span>
+            {% endif %}
+          </td>
+          <td class="p-3">{{ producto.nombre }}</td>
+          <td class="p-3">
+            {% if producto.categoria %}
+              {{ producto.categoria.nombre }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td class="p-3 text-right">${{ producto.precio|floatformat:2 }}</td>
+          <td class="p-3 text-center">{{ producto.stock }}</td>
+          <td class="p-3 text-center flex justify-center gap-2">
+            <button class="btn-editar bg-yellow-600 hover:bg-yellow-500 text-white p-2 rounded-full transition"
+                    data-id="{{ producto.id }}">
+              <i data-lucide="edit" class="w-4 h-4"></i>
+            </button>
+            <button class="btn-eliminar bg-red-600 hover:bg-red-500 text-white p-2 rounded-full transition"
+                    data-id="{{ producto.id }}">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="p-4 text-center text-muted">No hay productos registrados.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal para formularios (producto/categoría) -->
+  <div id="modalPrincipal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-soft rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-gray-600 p-4">
+        <h3 id="modalTitulo" class="text-xl font-bold text-acento"></h3>
+        <button class="text-gray-400 hover:text-white transition close-modal">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+      <div id="modalContenido" class="p-4">
+        <!-- Contenido dinámico se cargará aquí -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación -->
+  <div id="modalConfirmacion" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-soft rounded-lg shadow-xl max-w-md w-full">
+      <div class="border-b border-gray-600 p-4">
+        <h3 class="text-xl font-bold text-acento">Confirmar acción</h3>
+      </div>
+      <div class="p-4">
+        <p id="confirmacionMensaje">¿Estás seguro de que deseas realizar esta acción?</p>
+      </div>
+      <div class="border-t border-gray-600 p-4 flex justify-end gap-4">
+        <button class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded transition btn-cancelar">
+          Cancelar
+        </button>
+        <button class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded transition btn-confirmar">
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para imagen grande -->
+  <div id="modalImagen" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+    <div class="relative max-w-4xl w-full">
+      <button class="absolute top-4 right-4 bg-gray-600 hover:bg-gray-500 text-white p-2 rounded-full transition close-modal">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+      <div class="bg-soft rounded-lg overflow-hidden">
+        <img id="imagenAmpliada" class="w-full max-h-[80vh] object-contain" src="" alt="Imagen ampliada">
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Inicializar DataTable
+  $('#tablaProductos').DataTable({
+    language: {url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'},
+    pageLength: 10,
+    responsive: true
+  });
+
+  // Obtener token CSRF
+  const csrftoken = document.cookie.match(/csrftoken=([^;]+)/)[1];
+
+  // Funciones para manejar modales
+  function abrirModal(titulo, contenido) {
+    document.getElementById('modalTitulo').textContent = titulo;
+    document.getElementById('modalContenido').innerHTML = contenido;
+    document.getElementById('modalPrincipal').classList.remove('hidden');
+    lucide.createIcons();
+  }
+
+  function cerrarModal() {
+    document.getElementById('modalPrincipal').classList.add('hidden');
+    document.getElementById('modalConfirmacion').classList.add('hidden');
+    document.getElementById('modalImagen').classList.add('hidden');
+  }
+
+  function abrirConfirmacion(mensaje, callback) {
+    document.getElementById('confirmacionMensaje').textContent = mensaje;
+    document.getElementById('modalConfirmacion').classList.remove('hidden');
+    
+    document.querySelector('#modalConfirmacion .btn-confirmar').onclick = function() {
+      callback();
+      cerrarModal();
+    };
+  }
+
+  // Event listeners para cerrar modales
+  document.querySelectorAll('.close-modal').forEach(btn => {
+    btn.addEventListener('click', cerrarModal);
+  });
+
+  // Evento para abrir imagen ampliada
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal-imagen-trigger')) {
+      document.getElementById('imagenAmpliada').src = e.target.dataset.src;
+      document.getElementById('modalImagen').classList.remove('hidden');
+    }
+  });
+
+  // Crear nuevo producto
+  document.getElementById('btnCrearProducto').addEventListener('click', function() {
+    fetch("{% url 'productos:crear' %}")
+      .then(response => response.json())
+      .then(data => {
+        abrirModal('Nuevo Producto', data.html);
+        
+        // Agregar botón para nueva categoría al select de categorías
+        const categoriaSelect = document.querySelector('#modalContenido select[name="categoria"]');
+        if (categoriaSelect) {
+          const addBtn = document.createElement('button');
+          addBtn.type = 'button';
+          addBtn.className = 'bg-blue-600 hover:bg-blue-500 text-white p-1 rounded ml-2 transition';
+          addBtn.title = 'Crear categoría';
+          addBtn.innerHTML = '<i data-lucide="plus" class="w-4 h-4"></i>';
+          categoriaSelect.parentNode.appendChild(addBtn);
+          
+          addBtn.addEventListener('click', function() {
+            abrirModal('Nueva Categoría', `
+              <form id="formCategoria" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                  <label class="block text-sm font-medium mb-2">Nombre</label>
+                  <input type="text" name="nombre" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2">Descripción</label>
+                  <textarea name="descripcion" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:ring-2 focus:ring-green-500 focus:border-transparent" rows="3"></textarea>
+                </div>
+                <div id="categoriaError" class="text-red-400 text-sm hidden"></div>
+                <div class="flex justify-end gap-4 pt-4">
+                  <button type="submit" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded transition">
+                    Guardar
+                  </button>
+                  <button type="button" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded transition close-modal">
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            `);
+            
+            lucide.createIcons();
+            
+            document.getElementById('formCategoria').addEventListener('submit', function(e) {
+              e.preventDefault();
+              const formData = new FormData(this);
+              const btnSubmit = this.querySelector('button[type="submit"]');
+              const originalText = btnSubmit.textContent;
+              btnSubmit.disabled = true;
+              btnSubmit.textContent = 'Guardando...';
+              
+              fetch("{% url 'productos:crear_categoria' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                  'X-CSRFToken': csrftoken
+                }
+              })
+              .then(response => response.json())
+              .then(data => {
+                if (data.success) {
+                  // Agregar la nueva categoría al select
+                  const option = new Option(data.nombre, data.id, true, true);
+                  categoriaSelect.add(option);
+                  cerrarModal();
+                } else {
+                  document.getElementById('categoriaError').textContent = data.error || 'Error al guardar';
+                  document.getElementById('categoriaError').classList.remove('hidden');
+                }
+              })
+              .finally(() => {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = originalText;
+              });
+            });
+          });
+        }
+        
+        // Manejar envío del formulario de producto
+        document.getElementById('formProducto').addEventListener('submit', function(e) {
+          e.preventDefault();
+          const formData = new FormData(this);
+          const btnSubmit = this.querySelector('button[type="submit"]');
+          const originalText = btnSubmit.textContent;
+          btnSubmit.disabled = true;
+          btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Guardando...';
+          
+          fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-CSRFToken': csrftoken
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              location.reload();
+            } else {
+              document.getElementById('modalContenido').innerHTML = data.html;
+              lucide.createIcons();
+            }
+          })
+          .finally(() => {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = originalText;
+          });
+        });
+      });
+  });
+
+  // Editar producto
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.btn-editar')) {
+      const id = e.target.closest('.btn-editar').dataset.id;
+      fetch(`/productos/editar/${id}/`)
+        .then(response => response.json())
+        .then(data => {
+          abrirModal('Editar Producto', data.html);
+          
+          // Manejar envío del formulario de producto (similar a crear)
+          document.getElementById('formProducto').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const btnSubmit = this.querySelector('button[type="submit"]');
+            const originalText = btnSubmit.textContent;
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Guardando...';
+            
+            fetch(this.action, {
+              method: 'POST',
+              body: formData,
+              headers: {
+                'X-CSRFToken': csrftoken
+              }
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                location.reload();
+              } else {
+                document.getElementById('modalContenido').innerHTML = data.html;
+                lucide.createIcons();
+              }
+            })
+            .finally(() => {
+              btnSubmit.disabled = false;
+              btnSubmit.innerHTML = originalText;
+            });
+          });
+        });
+    }
+  });
+
+  // Eliminar producto
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.btn-eliminar')) {
+      const id = e.target.closest('.btn-eliminar').dataset.id;
+      const productoNombre = e.target.closest('tr').querySelector('td:nth-child(2)').textContent;
+      
+      abrirConfirmacion(`¿Estás seguro de que deseas eliminar el producto "${productoNombre}"?`, function() {
+        fetch(`/productos/eliminar/${id}/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrftoken
+          },
+          body: `csrfmiddlewaretoken=${csrftoken}`
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            document.querySelector(`tr[data-id="${id}"]`).remove();
+          } else {
+            alert('Error al eliminar el producto');
+          }
+        });
+      });
+    }
+  });
+
+  // Nueva categoría desde botón principal
+  document.getElementById('btnCrearCategoria').addEventListener('click', function() {
+    abrirModal('Nueva Categoría', `
+      <form id="formCategoria" class="space-y-4">
+        {% csrf_token %}
+        <div>
+          <label class="block text-sm font-medium mb-2">Nombre</label>
+          <input type="text" name="nombre" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Descripción</label>
+          <textarea name="descripcion" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:ring-2 focus:ring-green-500 focus:border-transparent" rows="3"></textarea>
+        </div>
+        <div id="categoriaError" class="text-red-400 text-sm hidden"></div>
+        <div class="flex justify-end gap-4 pt-4">
+          <button type="submit" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded transition">
+            Guardar
+          </button>
+          <button type="button" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded transition close-modal">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    `);
+    
+    lucide.createIcons();
+    
+    document.getElementById('formCategoria').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const btnSubmit = this.querySelector('button[type="submit"]');
+      const originalText = btnSubmit.textContent;
+      btnSubmit.disabled = true;
+      btnSubmit.textContent = 'Guardando...';
+      
+      fetch("{% url 'productos:crear_categoria' %}", {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-CSRFToken': csrftoken
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          cerrarModal();
+        } else {
+          document.getElementById('categoriaError').textContent = data.error || 'Error al guardar';
+          document.getElementById('categoriaError').classList.remove('hidden');
+        }
+      })
+      .finally(() => {
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = originalText;
+      });
+    });
+  });
+
+  // Inicializar iconos Lucide
+  lucide.createIcons();
+});
+</script>
+{% endblock %}

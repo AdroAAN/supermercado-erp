@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Abrir Caja{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+  <div class="max-w-lg mx-auto rounded-2xl shadow-xl border border-lime-700
+              bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] text-gray-300 p-8">
+
+    <div class="flex items-center gap-3 mb-6">
+      <i data-lucide="dollar-sign" class="w-7 h-7 stroke-lime-400"></i>
+      <h1 class="text-3xl font-bold text-lime-300 select-none">Abrir Caja</h1>
+    </div>
+
+    {% if messages %}
+    <div class="mb-4 space-y-2">
+      {% for message in messages %}
+        <div class="px-4 py-2 rounded text-sm font-medium
+          {% if message.tags == 'success' %}bg-green-700 text-green-100
+          {% elif message.tags == 'error' or message.tags == 'danger' %}bg-red-800 text-red-200
+          {% elif message.tags == 'warning' %}bg-yellow-700 text-yellow-100
+          {% else %}bg-gray-700 text-gray-200{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <form id="formAbrirCaja" method="post" class="space-y-5">
+      {% csrf_token %}
+      <div>
+        <label for="monto" class="block text-sm font-semibold text-lime-300 mb-1">
+          Monto inicial
+        </label>
+        <div class="relative">
+          <input
+            type="number"
+            name="monto"
+            id="monto"
+            min="0"
+            step="0.01"
+            required
+            class="w-full bg-gray-800 border border-gray-600 text-gray-100 rounded-lg px-4 py-2 pl-10
+                   focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-offset-1"
+            placeholder="Ej. 1000.00"
+          />
+          <i data-lucide="wallet" class="w-5 h-5 absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400"></i>
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        class="w-full inline-flex items-center justify-center gap-2
+               bg-gradient-to-r from-[#15803d] to-[#16a34a] hover:from-[#166534] hover:to-[#15803d]
+               text-white font-semibold py-2.5 rounded-lg shadow-md transition"
+      >
+        <i data-lucide="lock-open" class="w-5 h-5 stroke-white"></i>
+        <span>Abrir Caja</span>
+      </button>
+    </form>
+
+    <div class="mt-6 text-center">
+      <a href="{% url 'ventas:estado_caja_actual' %}" class="text-lime-400 hover:text-lime-300 font-medium hover:underline inline-flex items-center gap-1 transition">
+        <i data-lucide="activity" class="w-4 h-4 stroke-lime-400"></i>
+        Ver estado de caja
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    initLucideIcons();
+
+    const form = document.getElementById('formAbrirCaja');
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const monto = document.getElementById('monto').value;
+
+      if (!monto || parseFloat(monto) <= 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Monto inválido',
+          text: 'Ingresa un monto mayor a cero para abrir la caja.',
+          confirmButtonText: 'Entendido',
+          background: '#1e293b',
+          color: '#f1f5f9',
+        });
+        return;
+      }
+
+      Swal.fire({
+        title: '¿Abrir caja?',
+        html: `Se abrirá la caja con un monto inicial de <strong>$${parseFloat(monto).toFixed(2)}</strong>.`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, abrir',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#15803d',
+        cancelButtonColor: '#4b5563',
+        background: '#1e293b',
+        color: '#f1f5f9',
+        customClass: {
+          popup: 'rounded-xl shadow-lg',
+          confirmButton: 'bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded',
+          cancelButton: 'bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded'
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          form.submit();
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Ticket Venta #{{ venta.id }}{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto p-6 bg-white rounded shadow-md">
+    <h1 class="text-2xl font-bold mb-4">Ticket de Venta #{{ venta.id }}</h1>
+
+    <p><strong>Fecha:</strong> {{ venta.fecha|date:"d/m/Y H:i" }}</p>
+    <p><strong>Usuario:</strong> {{ venta.usuario.get_full_name|default:venta.usuario.username }}</p>
+    <p><strong>Método de pago:</strong> 
+        {% for codigo, texto in venta.METODOS_PAGO %}
+            {% if codigo == venta.metodo_pago %}
+                {{ texto }}
+            {% endif %}
+        {% endfor %}
+    </p>
+
+    <hr class="my-4">
+
+    <table class="w-full text-left border-collapse">
+        <thead>
+            <tr>
+                <th class="border-b border-gray-300 pb-2">Producto</th>
+                <th class="border-b border-gray-300 pb-2">Cantidad</th>
+                <th class="border-b border-gray-300 pb-2">Precio Unitario</th>
+                <th class="border-b border-gray-300 pb-2">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detalle in detalles %}
+            <tr>
+                <td class="py-1">{{ detalle.producto.nombre }}</td>
+                <td class="py-1">{{ detalle.cantidad }}</td>
+                <td class="py-1">${{ detalle.producto.precio|floatformat:2 }}</td>
+                <td class="py-1">${{ detalle.subtotal|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <hr class="my-4">
+
+    <p class="text-right text-lg font-semibold">Total: ${{ venta.total|floatformat:2 }}</p>
+
+    <p class="mt-6 text-gray-600 text-sm">Fecha de impresión: {{ hoy|date:"d/m/Y H:i" }}</p>
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h1 class="text-4xl font-extrabold mb-10 text-acento tracking-wide drop-shadow-md flex items-center gap-3 select-text" aria-label="Título del dashboard">
+  <i data-lucide="grid" class="w-10 h-10 stroke-acento" aria-hidden="true"></i>
+  Dashboard
+</h1>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+
+  <!-- Ventas: verde -->
+  <a href="{% url 'ventas:lista_ventas' %}" 
+     class="group block rounded-xl bg-gradient-to-tr from-green-800 to-green-600 shadow-lg border border-lime-700
+            hover:shadow-green-500/70 transition-shadow duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-400 focus-visible:ring-offset-2"
+     aria-label="Ir a módulo Ventas" role="link" tabindex="0">
+    <div class="p-8 text-center text-white select-text">
+      <i data-lucide="credit-card" class="mx-auto mb-5 w-14 h-14 text-green-300 group-hover:text-green-100 transition-colors"></i>
+      <h3 class="text-2xl font-semibold mb-2">Ventas</h3>
+      <p class="opacity-90 text-base">Gestiona ventas y reportes</p>
+    </div>
+  </a>
+
+  <!-- Productos: azul -->
+  {% if 'Gerente' in grupos_usuario or 'Encargado' in grupos_usuario %}
+  <a href="{% url 'productos:lista' %}" 
+     class="group block rounded-xl bg-gradient-to-tr from-blue-700 to-blue-500 shadow-lg border border-blue-700
+            hover:shadow-blue-400/70 transition-shadow duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
+     aria-label="Ir a módulo Productos" role="link" tabindex="0">
+    <div class="p-8 text-center text-white select-text">
+      <i data-lucide="package" class="mx-auto mb-5 w-14 h-14 text-blue-300 group-hover:text-blue-100 transition-colors"></i>
+      <h3 class="text-2xl font-semibold mb-2">Productos</h3>
+      <p class="opacity-90 text-base">Catálogo y stock</p>
+    </div>
+  </a>
+  {% endif %}
+
+  <!-- Compras: naranja (próximamente) -->
+  {% if 'Gerente' in grupos_usuario %}
+  <div 
+    class="block rounded-xl bg-gradient-to-tr from-orange-700 to-orange-500 shadow-inner border border-orange-600
+           text-center p-8 cursor-not-allowed select-none opacity-75"
+    aria-disabled="true" aria-label="Módulo Compras próximamente no disponible" title="Próximamente módulo Compras" role="region">
+    <i data-lucide="shopping-bag" class="mx-auto mb-5 w-14 h-14 text-orange-300"></i>
+    <h3 class="text-2xl font-semibold mb-2 text-orange-100 select-text">Compras</h3>
+    <p class="italic opacity-90 text-orange-100 text-base select-text">Próximamente…</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

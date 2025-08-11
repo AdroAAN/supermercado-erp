@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Usuarios{% endblock %}
+
+{% block content %}
+<!-- Encabezado con acciones -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4 p-6
+    bg-gradient-to-r from-[#064e3b] via-[#065f46] to-[#047857]
+    rounded-lg shadow-lg border border-lime-700">
+  <h1 class="text-3xl font-extrabold text-lime-300 flex items-center gap-3 tracking-wide select-text">
+    <i data-lucide="users" class="w-7 h-7 stroke-lime-400"></i>
+    Lista de usuarios
+  </h1>
+  <div class="flex flex-wrap gap-3 text-sm items-center">
+    <!-- Filtro de estado -->
+    <form method="get" class="relative flex items-center gap-2">
+      <label for="estado" class="text-lime-100 font-semibold">Mostrar:</label>
+      <select name="estado" id="estado" onchange="this.form.submit()"
+        class="appearance-none bg-lime-900 text-lime-200 border border-lime-600 rounded px-3 py-1.5 shadow pr-8 cursor-pointer"
+        style="-webkit-appearance:none; -moz-appearance:none; appearance:none;">
+        <option value="" {% if not request.GET.estado %}selected{% endif %}>Todos</option>
+        <option value="activos" {% if request.GET.estado == 'activos' %}selected{% endif %}>Activos</option>
+        <option value="inactivos" {% if request.GET.estado == 'inactivos' %}selected{% endif %}>Inactivos</option>
+      </select>
+      <div class="pointer-events-none absolute inset-y-0 right-2 flex items-center text-lime-300">
+        <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.586l3.71-4.356a.75.75 0 111.14.976l-4.25 5a.75.75 0 01-1.14 0l-4.25-5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+        </svg>
+      </div>
+    </form>
+
+    <a href="{% url 'accounts:crear_usuario' %}"
+      class="inline-flex items-center gap-2 bg-lime-500 hover:bg-lime-600 text-gray-900 font-semibold
+        px-5 py-2.5 rounded-lg shadow-md transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-400">
+      <i data-lucide="user-plus" class="w-5 h-5 stroke-lime-700"></i> Nuevo usuario
+    </a>
+    <a href="{% url 'accounts:exportar_usuarios_excel' %}"
+      class="inline-flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-semibold
+        px-5 py-2.5 rounded-lg shadow-md transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500">
+      <i data-lucide="file-spreadsheet" class="w-5 h-5 stroke-white"></i> Exportar a Excel
+    </a>
+  </div>
+</div>
+
+<!-- Tabla de usuarios -->
+<div class="overflow-x-auto bg-[#0f172a] rounded-xl shadow-2xl border border-lime-700/70">
+  <table id="usuarios-table"
+    class="display dataTable w-full text-sm table-auto border border-lime-700/70 rounded-lg">
+    <thead
+      class="bg-gradient-to-r from-[#065f46] to-[#064e3b] text-lime-100 border-b-2 border-lime-500">
+      <tr>
+        <th class="px-6 py-3 text-left uppercase font-bold tracking-wide select-text">Usuario</th>
+        <th class="px-6 py-3 text-left uppercase font-bold tracking-wide select-text">Correo electrónico</th>
+        <th class="px-6 py-3 text-left uppercase font-bold tracking-wide select-text">Roles</th>
+        <th class="px-6 py-3 text-center uppercase font-bold tracking-wide select-text">Activo</th>
+        <th class="px-6 py-3 text-center uppercase font-bold tracking-wide select-text">Acciones</th>
+      </tr>
+    </thead>
+    <tbody class="text-lime-200">
+      {% for user in usuarios %}
+      <tr class="odd:bg-[#064e3b] even:bg-[#065f46] hover:bg-lime-700/30 transition-colors duration-300 border-b border-lime-600/40">
+        <td class="px-6 py-3">
+          <div class="flex items-center gap-3 select-text">
+            <span class="bg-lime-400 text-gray-900 font-bold rounded-full w-9 h-9 flex items-center justify-center shadow-md">
+              {{ user.username|first|upper }}
+            </span>
+            <span class="text-lg font-semibold">{{ user.username }}</span>
+          </div>
+        </td>
+        <td class="px-6 py-3 select-text">{{ user.email }}</td>
+        <td class="px-6 py-3 space-x-1 select-text">
+          {% if user.groups.all %}
+            {% for grupo in user.groups.all %}
+              {% if grupo.name == "Gerente" %}
+                <span class="inline-block bg-gradient-to-br from-red-700 to-red-900 text-red-100 px-3 py-0.5 rounded-full text-xs font-semibold shadow">Gerente</span>
+              {% elif grupo.name == "Encargado" %}
+                <span class="inline-block bg-gradient-to-br from-yellow-500 to-yellow-700 text-yellow-900 px-3 py-0.5 rounded-full text-xs font-semibold shadow">Encargado</span>
+              {% elif grupo.name == "Cajero" %}
+                <span class="inline-block bg-gradient-to-br from-blue-600 to-blue-900 text-blue-100 px-3 py-0.5 rounded-full text-xs font-semibold shadow">Cajero</span>
+              {% else %}
+                <span class="inline-block bg-gradient-to-br from-green-600 to-green-800 text-lime-200 px-3 py-0.5 rounded-full text-xs font-semibold shadow">{{ grupo.name }}</span>
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            <em class="text-gray-400 italic select-text">Sin roles</em>
+          {% endif %}
+        </td>
+        <td class="px-6 py-3 text-center font-semibold select-text">
+          {% if user.is_active %}
+            <span class="text-lime-400 font-semibold">Sí</span>
+          {% else %}
+            <span class="text-red-500 font-semibold">No</span>
+          {% endif %}
+        </td>
+        <td class="px-6 py-3 text-center space-x-2">
+          <a href="{% url 'accounts:editar_usuario' user.id %}"
+            class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold
+            px-4 py-1.5 rounded-md shadow transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400">
+            <i data-lucide="edit-3" class="w-5 h-5"></i> Editar
+          </a>
+          {% if user.is_active %}
+          <a href="{% url 'accounts:desactivar_usuario' user.id %}"
+            class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold
+            px-4 py-1.5 rounded-md shadow transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-400">
+            <i data-lucide="user-minus" class="w-5 h-5"></i> Desactivar
+          </a>
+          {% else %}
+          <a href="{% url 'accounts:reactivar_usuario' user.id %}"
+            class="inline-flex items-center gap-2 bg-lime-600 hover:bg-lime-700 text-white font-semibold
+            px-4 py-1.5 rounded-md shadow transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-400">
+            <i data-lucide="user-check" class="w-5 h-5"></i> Reactivar
+          </a>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr class="bg-[#064e3b] text-lime-200">
+        <td class="px-6 py-8"></td>
+        <td class="px-6 py-8"></td>
+        <td class="px-6 py-8 text-center text-gray-400 text-lg font-semibold italic select-text">
+          <i data-lucide="user-x" class="w-5 h-5 inline-block mr-1"></i>
+          No hay usuarios en esta categoría.
+        </td>
+        <td class="px-6 py-8"></td>
+        <td class="px-6 py-8"></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  $(document).ready(function () {
+    if (!$.fn.DataTable.isDataTable('#usuarios-table')) {
+      $('#usuarios-table').DataTable({
+        language: {
+          url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        },
+        pageLength: 10,
+        responsive: true,
+        columnDefs: [
+          { orderable: false, targets: 4 }
+        ],
+        lengthMenu: [[5, 10, 25, -1], [5, 10, 25, "Todos"]],
+        pagingType: "simple_numbers",
+        autoWidth: false,
+        scrollX: true,
+        initComplete: function () {
+          if (window.lucide) {
+            initLucideIcons();
+          }
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

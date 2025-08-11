@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Estado de Caja{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+  <div class="max-w-4xl mx-auto rounded-2xl border border-lime-700 shadow-xl
+              bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] text-gray-300 p-8">
+
+    <!-- Encabezado -->
+    <div class="flex items-center gap-3 mb-6">
+      <i data-lucide="briefcase" class="w-7 h-7 stroke-lime-400"></i>
+      <h1 class="text-3xl font-extrabold text-lime-300 select-none">Estado de Caja Actual</h1>
+    </div>
+
+    <!-- Mensajes -->
+    {% if messages %}
+    <div class="mb-4 space-y-2">
+      {% for message in messages %}
+        <div class="px-4 py-2 rounded text-sm font-medium 
+          {% if message.tags == 'success' %}bg-green-700 text-green-100
+          {% elif message.tags == 'error' or message.tags == 'danger' %}bg-red-800 text-red-200
+          {% elif message.tags == 'warning' %}bg-yellow-600 text-yellow-100
+          {% else %}bg-gray-700 text-gray-200{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if caja %}
+    <!-- Información de la caja -->
+    <div class="mb-8 space-y-2 text-sm">
+      <p><strong class="text-lime-300">Usuario:</strong> {{ caja.usuario.username }}</p>
+      <p><strong class="text-lime-300">Fecha de apertura:</strong> {{ caja.fecha_apertura|date:"d/m/Y H:i" }}</p>
+      <p><strong class="text-lime-300">Saldo inicial:</strong> ${{ caja.saldo_inicial }}</p>
+      <p><strong class="text-green-400 font-semibold">Saldo actual:</strong> ${{ saldo_actual }}</p>
+    </div>
+
+    <!-- Tabla de movimientos -->
+    <div class="overflow-x-auto rounded-xl border border-gray-700 shadow-md bg-gray-900">
+      <table class="w-full table-auto text-sm text-lime-100">
+        <thead class="bg-gradient-to-r from-[#064e3b] via-[#065f46] to-[#047857] text-lime-300 uppercase text-xs">
+          <tr>
+            <th class="px-4 py-3 whitespace-nowrap">Fecha</th>
+            <th class="px-4 py-3 whitespace-nowrap">Tipo</th>
+            <th class="px-4 py-3 whitespace-nowrap">Monto</th>
+            <th class="px-4 py-3 whitespace-nowrap">Descripción</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700">
+          {% for mov in movimientos %}
+          <tr class="transition duration-150
+            {% if mov.tipo == 'INGRESO' %}border-l-4 border-green-500
+            {% elif mov.tipo == 'EGRESO' %}border-l-4 border-red-500{% endif %}
+            hover:bg-[#1e3a3a]">
+            <td class="px-4 py-2 whitespace-nowrap">{{ mov.fecha|date:"d/m/Y H:i" }}</td>
+            <td class="px-4 py-2 whitespace-nowrap font-semibold">
+              {% if mov.tipo == 'INGRESO' %}
+                <span class="text-green-400">Ingreso</span>
+              {% elif mov.tipo == 'EGRESO' %}
+                <span class="text-red-400">Egreso</span>
+              {% else %}
+                {{ mov.tipo }}
+              {% endif %}
+            </td>
+            <td class="px-4 py-2 whitespace-nowrap monto">${{ mov.monto }}</td>
+            <td class="px-4 py-2 whitespace-nowrap" title="{{ mov.descripcion }}">{{ mov.descripcion|truncatechars:40 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Botón cerrar caja -->
+    <div class="mt-6 flex justify-end">
+      <button id="btnCerrarCaja" class="inline-flex items-center gap-2
+        bg-gradient-to-r from-[#15803d] to-[#16a34a] hover:from-[#166534] hover:to-[#15803d]
+        text-white font-semibold px-5 py-2 rounded-lg shadow-md transition">
+        <i data-lucide="lock" class="w-4 h-4 stroke-white"></i> Cerrar Caja
+      </button>
+    </div>
+
+    {% else %}
+    <div class="text-center py-6 text-gray-400">
+      <p class="mb-4">No tienes una caja abierta actualmente.</p>
+      <a href="{% url 'ventas:abrir_caja' %}" class="inline-flex items-center gap-2 text-lime-400 hover:text-lime-300 hover:underline transition">
+        <i data-lucide="plus-circle" class="w-5 h-5 stroke-lime-400"></i> Abrir caja
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    initLucideIcons();
+
+    // Formato de montos
+    document.querySelectorAll('.monto').forEach(el => {
+      const num = parseFloat(el.textContent.replace('$', ''));
+      if (!isNaN(num)) {
+        el.textContent = new Intl.NumberFormat('es-MX', {
+          style: 'currency',
+          currency: 'MXN',
+          minimumFractionDigits: 2
+        }).format(num);
+      }
+    });
+
+    // Confirmación con SweetAlert2
+    const btnCerrar = document.getElementById('btnCerrarCaja');
+    if (btnCerrar) {
+      btnCerrar.addEventListener('click', () => {
+        Swal.fire({
+          title: '¿Cerrar caja?',
+          text: 'Una vez cerrada, no podrás realizar más movimientos hasta abrir otra.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Sí, cerrar',
+          cancelButtonText: 'Cancelar',
+          confirmButtonColor: '#15803d',
+          cancelButtonColor: '#4b5563',
+          background: '#1e293b',
+          color: '#f1f5f9',
+          customClass: {
+            popup: 'rounded-lg shadow-lg',
+            confirmButton: 'bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded',
+            cancelButton: 'bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded'
+          }
+        }).then(result => {
+          if (result.isConfirmed) {
+            window.location.href = "{% url 'ventas:cerrar_caja' %}";
+          }
+        });
+      });
+    }
+  });
+</script>
+{% endblock %}

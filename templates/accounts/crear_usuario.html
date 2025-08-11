@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Crear Usuario{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-gradient-to-tr from-[#1f2937] via-[#111827] to-[#1f2937] rounded-xl p-8 shadow-2xl border border-gray-700">
+  <h2 class="text-3xl font-extrabold mb-8 text-acento flex items-center gap-3 select-none">
+    <i data-lucide="user-plus" class="w-8 h-8"></i>
+    Crear nuevo usuario
+  </h2>
+
+  <form method="post" class="space-y-7" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    {% for field in form %}
+      <div>
+        <label for="{{ field.id_for_label }}" 
+               class="block mb-2 font-semibold text-gray-300 hover:text-lime-400 cursor-pointer transition-colors duration-200">
+          {{ field.label }}
+          {% if field.field.required %}
+            <span class="text-red-500 ml-1">*</span>
+          {% endif %}
+        </label>
+
+        {{ field|add_class:"bg-[#2f2f2f] border border-gray-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-lime-400 w-full" }}
+
+        {% if field.help_text %}
+          <p class="text-xs text-gray-400 italic mt-1 select-none">{{ field.help_text }}</p>
+        {% endif %}
+        {% for error in field.errors %}
+          <p class="text-sm text-red-500 mt-2 font-medium tracking-wide">{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endfor %}
+
+    <div class="flex justify-between items-center mt-6">
+      <button type="submit" 
+              class="inline-flex items-center gap-3 bg-acento hover:bg-lime-600 text-black font-bold px-6 py-3 rounded-xl shadow-lg transition focus-visible:outline focus-visible:outline-4 focus-visible:outline-lime-400">
+        <i data-lucide="check-circle" class="w-6 h-6"></i> Registrar
+      </button>
+      <a href="{% url 'accounts:listar_usuarios' %}" 
+         class="inline-flex items-center gap-3 bg-gray-700 hover:bg-gray-800 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition focus-visible:outline focus-visible:outline-4 focus-visible:outline-gray-500">
+        <i data-lucide="x-circle" class="w-6 h-6"></i> Cancelar
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+*.sqlite3
+
+# Entorno virtual
+venv/
+env/
+.venv/
+.env
+
+# Archivos de configuración local
+*.log
+*.pot
+*.mo
+local_settings.py
+
+# Archivos de compilación de frontend
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Archivos de Tailwind/Build
+staticfiles/
+static/
+dist/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db

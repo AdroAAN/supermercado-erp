@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Comparar versiones de Venta #{{ venta.id }}{% endblock %}
+
+{% block content %}
+  <h2 class="text-2xl font-bold mb-6 text-lime-400">Comparar versiones de Venta #{{ venta.id }}</h2>
+
+  <div class="bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+    <h3 class="text-lg font-semibold mb-4">Resumen de la Venta</h3>
+    <p><strong>Fecha:</strong> {{ venta.fecha|date:"d/m/Y H:i" }}</p>
+    <p><strong>Método de Pago:</strong> {{ venta.get_metodo_pago_display }}</p>
+    <p><strong>Total:</strong> ${{ venta.total|floatformat:2|intcomma }}</p>
+    <p><strong>Estado:</strong> {% if venta.anulada %}Anulada{% else %}Activa{% endif %}</p>
+    {% if venta.anulada and venta.motivo_anulacion %}
+      <p><strong>Motivo de Anulación:</strong> {{ venta.motivo_anulacion }}</p>
+    {% endif %}
+    <details class="mt-4">
+      <summary class="text-md font-semibold cursor-pointer text-lime-400 hover:text-lime-300">Mostrar Productos Actuales</summary>
+      {% if venta.detalles.all %}
+        <table class="min-w-full bg-gray-900 rounded-lg mt-2">
+          <thead>
+            <tr class="bg-lime-600 text-white">
+              <th class="px-4 py-2 text-left">Producto</th>
+              <th class="px-4 py-2 text-right">Cantidad</th>
+              <th class="px-4 py-2 text-right">Precio Unitario</th>
+              <th class="px-4 py-2 text-right">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for detalle in venta.detalles.all %}
+              <tr class="border-b border-gray-700">
+                <td class="px-4 py-2">{{ detalle.producto.nombre }}</td>
+                <td class="px-4 py-2 text-right">{{ detalle.cantidad }}</td>
+                <td class="px-4 py-2 text-right">${{ detalle.producto.precio|floatformat:2|intcomma }}</td>
+                <td class="px-4 py-2 text-right">${{ detalle.subtotal|floatformat:2|intcomma }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="mt-2">Sin productos</p>
+      {% endif %}
+    </details>
+  </div>
+
+  <div class="bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+    <h3 class="text-lg font-semibold mb-4">
+      Comparando: 
+      Versión del {{ v1.history_date|date:"d/m/Y H:i:s" }} 
+      (por {{ v1.history_user|default:"Sistema" }}) 
+      con 
+      Versión del {{ v2.history_date|date:"d/m/Y H:i:s" }} 
+      (por {{ v2.history_user|default:"Sistema" }})
+    </h3>
+  </div>
+
+  <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+    <table class="min-w-full bg-gray-900">
+      <thead>
+        <tr class="bg-lime-600 text-white">
+          <th class="px-4 py-2">Campo</th>
+          <th class="px-4 py-2">Resumen de Cambios</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for diff in diferencias %}
+          <tr class="border-b border-gray-700">
+            <td class="px-4 py-2">
+              {% if diff.field|slice:"0:8" == "detalle_" %}
+                {{ diff.field|slice:"8:"|title }} (Producto)
+              {% else %}
+                {{ diff.field|title }}
+              {% endif %}
+            </td>
+            <td class="px-4 py-2">
+              {% if diff.field|slice:"0:8" == "detalle_" %}
+                {% if diff.old and diff.old.status == 'eliminado' %}
+                  Eliminada {{ diff.old.cantidad }} unidad{{ diff.old.cantidad|pluralize:"es" }} (Precio: ${{ diff.old.precio_unitario|floatformat:2|intcomma }}, Subtotal: ${{ diff.old.subtotal|floatformat:2|intcomma }}, Stock: {{ diff.old.stock }} → {{ diff.new|default:diff.old.stock }})
+                {% elif diff.new and diff.new.status == 'añadido' %}
+                  Añadida {{ diff.new.cantidad }} unidad{{ diff.new.cantidad|pluralize:"es" }} (Precio: ${{ diff.new.precio_unitario|floatformat:2|intcomma }}, Subtotal: ${{ diff.new.subtotal|floatformat:2|intcomma }}, Stock: {{ diff.new.stock }} ← {{ diff.old|default:diff.new.stock }})
+                {% else %}
+                  Modificada cantidad de {{ diff.old.cantidad }} a {{ diff.new.cantidad }} unidad{{ diff.new.cantidad|pluralize:"es" }} (Precio: ${{ diff.old.precio_unitario|floatformat:2|intcomma }} → ${{ diff.new.precio_unitario|floatformat:2|intcomma }}, Subtotal: ${{ diff.old.subtotal|floatformat:2|intcomma }} → ${{ diff.new.subtotal|floatformat:2|intcomma }}, Stock: {{ diff.old.stock }} → {{ diff.new.stock }})
+                {% endif %}
+              {% else %}
+                {% if diff.old != None %}
+                  De
+                  {% if diff.field in 'total,subtotal' %}
+                    ${{ diff.old|floatformat:2|intcomma }}
+                  {% elif diff.field == 'fecha' %}
+                    {{ diff.old|date:"d/m/Y H:i:s" }}
+                  {% else %}
+                    {{ diff.old|default:"—" }}
+                  {% endif %}
+                  a
+                  {% if diff.field in 'total,subtotal' %}
+                    ${{ diff.new|floatformat:2|intcomma }}
+                  {% elif diff.field == 'fecha' %}
+                    {{ diff.new|date:"d/m/Y H:i:s" }}
+                  {% else %}
+                    {{ diff.new|default:"—" }}
+                  {% endif %}
+                {% else %}
+                  A
+                  {% if diff.field in 'total,subtotal' %}
+                    ${{ diff.new|floatformat:2|intcomma }}
+                  {% elif diff.field == 'fecha' %}
+                    {{ diff.new|date:"d/m/Y H:i:s" }}
+                  {% else %}
+                    {{ diff.new|default:"—" }}
+                  {% endif %}
+                {% endif %}
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="2" class="px-4 py-2 text-center">No se encontraron diferencias entre las versiones seleccionadas.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-6">
+    <a href="{% url 'ventas:historial_venta' venta.id %}" class="bg-lime-600 text-white px-4 py-2 rounded hover:bg-lime-500">
+      Volver al historial
+    </a>
+  </div>
+{% endblock %}

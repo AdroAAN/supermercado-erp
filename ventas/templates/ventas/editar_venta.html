@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+{% block title %}Editar Venta #{{ venta.id }}{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto bg-soft border border-gray-700 rounded-lg p-8 shadow-lg select-none">
+  <h1 class="text-3xl font-extrabold text-acento mb-8 flex items-center gap-3 select-text">
+    <i data-lucide="edit-2" class="w-8 h-8"></i>
+    Editar Venta #{{ venta.id }}
+  </h1>
+
+  <form method="post" id="formset-form" class="space-y-8" novalidate>
+    {% csrf_token %}
+    {{ formset.management_form }}
+
+    {% if form.errors %}
+      <div class="alert alert-error" role="alert" tabindex="0">
+        Por favor corrige los errores en el formulario.
+      </div>
+    {% endif %}
+    {% if formset.non_form_errors %}
+      <div class="alert alert-error" role="alert" tabindex="0">
+        {{ formset.non_form_errors }}
+      </div>
+    {% endif %}
+
+    <!-- Método de pago -->
+    <div>
+      <label for="{{ form.metodo_pago.id_for_label }}" class="block font-semibold text-gray-200 mb-2 cursor-pointer select-text">
+        Método de Pago
+      </label>
+      {{ form.metodo_pago|add_class:"bg-gray-800 text-white border border-gray-600 rounded-md w-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-lime-400" }}
+      {% for error in form.metodo_pago.errors %}
+        <p class="text-red-500 text-sm mt-1 select-text">{{ error }}</p>
+      {% endfor %}
+    </div>
+
+    <!-- Tabla editable -->
+    <div class="overflow-x-auto rounded-md border border-gray-700 shadow-inner">
+      <table id="formset-table" class="w-full text-left border-separate border-spacing-y-2">
+        <thead>
+          <tr class="text-gray-300">
+            <th class="px-4 py-2">Producto</th>
+            <th class="px-4 py-2">Cantidad</th>
+            <th class="px-4 py-2">Precio unitario</th>
+            <th class="px-4 py-2">Subtotal</th>
+            <th class="px-4 py-2">Eliminar</th>
+          </tr>
+        </thead>
+        <tbody id="productos-tabla">
+          {% for form in formset %}
+          <tr class="bg-gray-800 rounded-lg producto-row">
+            <td class="px-4 py-2">
+              {{ form.id }}
+              {{ form.producto|add_class:"bg-gray-900 border border-gray-700 rounded-md px-3 py-2 w-full text-white focus:outline-none focus:ring-2 focus:ring-lime-400 producto-select" }}
+              {% for error in form.producto.errors %}
+                <p class="text-red-500 text-sm">{{ error }}</p>
+              {% endfor %}
+            </td>
+            <td class="px-4 py-2">
+              {{ form.cantidad|add_class:"bg-gray-900 border border-gray-700 rounded-md px-3 py-2 w-20 text-right text-white focus:outline-none focus:ring-2 focus:ring-lime-400 cantidad-input" }}
+              {% for error in form.cantidad.errors %}
+                <p class="text-red-500 text-sm">{{ error }}</p>
+              {% endfor %}
+            </td>
+            <td class="px-4 py-2 precio-unitario">—</td>
+            <td class="px-4 py-2 subtotal">—</td>
+            <td class="px-4 py-2">
+              {{ form.DELETE|add_class:"cursor-pointer w-5 h-5 text-red-500 hover:text-red-600" }}
+            </td>
+          </tr>
+          {% if form.non_field_errors %}
+            <tr>
+              <td colspan="5" class="text-red-500 text-sm">{{ form.non_field_errors }}</td>
+            </tr>
+          {% endif %}
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" class="px-4 py-2 text-right font-bold text-white">Total:</td>
+            <td class="px-4 py-2 font-bold text-white" id="total-venta">${{ venta.total|floatformat:2 }}</td>
+            <td class="px-4 py-2"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="mt-6">
+      <button type="button" id="btn-agregar-producto" class="bg-lime-600 hover:bg-lime-700 text-white font-semibold py-2 px-5 rounded-lg shadow-md transition focus-visible:outline focus-visible:outline-4 focus-visible:outline-lime-400 select-none">
+        + Agregar producto
+      </button>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-6 mt-8">
+      <button type="submit" class="inline-flex items-center gap-2 bg-acento text-black font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-lime-600 transition focus-visible:outline focus-visible:outline-4 focus-visible:outline-lime-400 select-none">
+        <i data-lucide="save" class="w-6 h-6"></i> Guardar Cambios
+      </button>
+      <a href="{% url 'ventas:lista_ventas' %}" class="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 underline transition focus-visible:outline focus-visible:outline-4 focus-visible:outline-purple-400 select-none">
+        <i data-lucide="arrow-left" class="w-6 h-6"></i> Volver a la lista
+      </a>
+    </div>
+  </form>
+</div>
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+const precios = {{ productos_json|safe }};
+
+function actualizarTotales() {
+  let total = 0;
+  document.querySelectorAll("#productos-tabla .producto-row").forEach(row => {
+    const productoSelect = row.querySelector(".producto-select");
+    const cantidadInput = row.querySelector(".cantidad-input");
+    const precioCelda = row.querySelector(".precio-unitario");
+    const subtotalCelda = row.querySelector(".subtotal");
+
+    const productoId = productoSelect.value;
+    const cantidad = parseInt(cantidadInput.value) || 0;
+    const precio = parseFloat(precios[productoId]) || 0;
+
+    const subtotal = precio * cantidad;
+    precioCelda.textContent = precio > 0 ? `$${precio.toFixed(2)}` : "—";
+    subtotalCelda.textContent = subtotal > 0 ? `$${subtotal.toFixed(2)}` : "—";
+    total += subtotal;
+  });
+
+  document.getElementById("total-venta").textContent = `$${total.toFixed(2)}`;
+}
+
+function actualizarIndices() {
+  const totalFormsInput = document.querySelector('#id_detalleventa_set-TOTAL_FORMS');
+  const rows = document.querySelectorAll('#productos-tabla .producto-row');
+
+  rows.forEach((row, index) => {
+    row.querySelectorAll('input, select').forEach(input => {
+      if (input.name) {
+        input.name = input.name.replace(/detalleventa_set-\d+-/, `detalleventa_set-${index}-`);
+      }
+      if (input.id) {
+        input.id = input.id.replace(/detalleventa_set-\d+-/, `detalleventa_set-${index}-`);
+      }
+    });
+  });
+
+  totalFormsInput.value = rows.length;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  // Inicializar precios y subtotales
+  actualizarTotales();
+
+  // Actualizar precios y subtotales al cambiar producto o cantidad
+  document.querySelectorAll("#productos-tabla .producto-select, #productos-tabla .cantidad-input").forEach(input => {
+    input.addEventListener("change", actualizarTotales);
+    input.addEventListener("input", actualizarTotales);
+  });
+
+  // Agregar nueva fila
+  document.getElementById('btn-agregar-producto').addEventListener('click', () => {
+    const tabla = document.getElementById('productos-tabla');
+    const totalFormsInput = document.querySelector('#id_detalleventa_set-TOTAL_FORMS');
+    const currentCount = parseInt(totalFormsInput.value);
+
+    // Clonar la última fila
+    const lastRow = tabla.querySelector('.producto-row:last-child');
+    if (!lastRow) {
+      alert('No hay filas para clonar, por favor crea al menos una fila vacía en el formset.');
+      return;
+    }
+
+    const nuevaFila = lastRow.cloneNode(true);
+    // Limpiar valores de la nueva fila
+    nuevaFila.querySelectorAll('select, input').forEach(el => {
+      if (el.tagName.toLowerCase() === 'select') {
+        el.selectedIndex = 0;
+      } else if (el.type === 'checkbox') {
+        el.checked = false;
+      } else if (el.type === 'hidden' && el.name.includes('id')) {
+        el.value = ''; // Limpiar el campo id para nuevos detalles
+      } else if (el.type === 'hidden' && el.name.includes('DELETE')) {
+        el.value = '';
+      } else {
+        el.value = el.type === 'number' ? '1' : '';
+      }
+    });
+    // Limpiar errores
+    nuevaFila.querySelectorAll('.text-red-500').forEach(el => el.remove());
+    // Establecer valores iniciales para precio y subtotal
+    nuevaFila.querySelector('.precio-unitario').textContent = '—';
+    nuevaFila.querySelector('.subtotal').textContent = '—';
+
+    tabla.appendChild(nuevaFila);
+    actualizarIndices();
+
+    // Agregar eventos a la nueva fila
+    nuevaFila.querySelectorAll('.producto-select, .cantidad-input').forEach(input => {
+      input.addEventListener("change", actualizarTotales);
+      input.addEventListener("input", actualizarTotales);
+    });
+
+    actualizarTotales();
+  });
+});
+</script>
+{% endblock %}
+{% endblock %}

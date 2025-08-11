@@ -1,0 +1,667 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% block title %}Caja - Nueva Venta{% endblock %}
+
+{% block content %}
+<style>
+  /* Soluciona el fondo transparente y el solapamiento del buscador */
+  #lista-sugerencias {
+    background-color: white !important;
+    z-index: 50;
+  }
+
+  /* Asegura que el contenedor se expanda correctamente */
+  .contenedor-venta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    max-width: 100%;
+    height: 100%;
+  }
+
+  .formulario-venta {
+    flex: 1 1 70%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel-lateral {
+    flex: 1 1 30%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Estilo para botones de método de pago */
+  .metodo-btn {
+    min-width: 140px; /* Consistent width */
+    text-align: center;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .metodo-btn[aria-pressed="true"] {
+    outline: 2px solid white;
+    outline-offset: 2px;
+    transform: scale(1.05); /* Slight scale for active state */
+  }
+
+  @media (max-width: 768px) {
+    .formulario-venta,
+    .panel-lateral {
+      flex: 1 1 100%;
+    }
+    .metodo-btn {
+      min-width: 120px; /* Smaller width on mobile */
+    }
+  }
+</style>
+
+<div class="contenedor-venta mx-auto">
+  <!-- FORMULARIO PRINCIPAL -->
+  <form method="post" id="form-venta" class="formulario-venta bg-gray-900 text-white p-6 rounded-lg shadow-lg" novalidate>
+    {% csrf_token %}
+
+    <h1 class="text-4xl font-bold mb-6 text-green-400 flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-500 animate-pulse" fill="none" viewBox="0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h4l3 8 4-16 3 8h4" />
+      </svg>
+      Caja - Nueva Venta
+    </h1>
+
+    <!-- MÉTODO DE PAGO -->
+    <div class="mb-6">
+      <label class="block text-lg font-semibold mb-2 text-white">Método de Pago</label>
+      <div class="flex gap-4 flex-wrap">
+        <button type="button" class="metodo-btn bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded transition shadow-md flex items-center"
+                data-metodo="Efectivo" aria-pressed="false" title="Pago en efectivo">
+          <svg xmlns="http://www.w3.org/2000/svg" class="inline h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="10" rx="2" ry="2" />
+            <path d="M12 11c1.333 0 2-.667 2-1s-.667-1-2-1-2 .667-2 1 0 1 2 1z" />
+            <path d="M12 13c-1.333 0-2 .667-2 1s.667 1 2 1 2-.667 2-1-.667-1-2-1z" />
+          </svg>
+          Efectivo
+        </button>
+        <button type="button" class="metodo-btn bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition shadow-md flex items-center"
+                data-metodo="Tarjeta" aria-pressed="false" title="Pago con tarjeta de crédito">
+          <svg xmlns="http://www.w3.org/2000/svg" class="inline h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="10" rx="2" ry="2" />
+            <line x1="2" y1="11" x2="22" y2="11" />
+            <circle cx="6" cy="15" r="1" />
+            <circle cx="10" cy="15" r="1" />
+            <circle cx="14" cy="15" r="1" />
+          </svg>
+          Tarjeta Crédito
+        </button>
+        <button type="button" class="metodo-btn bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition shadow-md flex items-center"
+                data-metodo="Tarjeta Débito" aria-pressed="false" title="Pago con tarjeta de débito">
+          <svg xmlns="http://www.w3.org/2000/svg" class="inline h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="10" rx="2" ry="2" />
+            <line x1="2" y1="11" x2="22" y2="11" />
+            <circle cx="6" cy="15" r="1" />
+            <circle cx="10" cy="15" r="1" />
+          </svg>
+          Tarjeta Débito
+        </button>
+        <button type="button" class="metodo-btn bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded transition shadow-md flex items-center"
+                data-metodo="Transferencia" aria-pressed="false" title="Pago por transferencia">
+          <svg xmlns="http://www.w3.org/2000/svg" class="inline h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12h18M6 9l-3 3 3 3M18 9l3 3-3 3" />
+          </svg>
+          Transferencia
+        </button>
+        <button type="button" class="metodo-btn bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded transition shadow-md flex items-center"
+                data-metodo="Mixto" aria-pressed="false" title="Pago mixto (efectivo + otros)">
+          <svg xmlns="http://www.w3.org/2000/svg" class="inline h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="12" r="4" />
+            <circle cx="15" cy="12" r="4" />
+            <path d="M12 8v8" />
+          </svg>
+          Mixto
+        </button>
+      </div>
+      <input type="hidden" name="metodo_pago" id="metodo_pago_real" required>
+      <input type="hidden" id="ultimo_venta_id" name="ultimo_venta_id" value="{{ request.GET.venta_id }}">
+    </div>
+
+    <!-- CAMPOS DINÁMICOS DE PAGO -->
+    <div id="campos-pago" class="mb-6 space-y-4 p-4 bg-gray-800 rounded-lg" aria-live="polite"></div>
+
+    <!-- BUSCADOR -->
+    <div class="mb-6 relative flex-grow-0">
+      <div class="relative">
+        <input id="buscar-producto" autocomplete="off"
+              placeholder="Buscar producto por nombre o código..."
+              class="w-full bg-gray-800 border border-gray-600 p-3 rounded shadow focus:outline-green-400"
+              autofocus aria-label="Buscar producto">
+        <ul id="lista-sugerencias"
+            class="absolute z-30 bg-white text-black border border-gray-300 rounded w-full max-h-64 overflow-y-auto hidden shadow-xl mt-1"
+            role="listbox" aria-label="Sugerencias de productos"></ul>
+      </div>
+      <button type="button" id="btn-agregar"
+              class="mt-4 w-full bg-green-700 text-white px-6 py-3 rounded hover:bg-green-800 font-semibold transition shadow-lg"
+              aria-label="Añadir producto seleccionado">
+        Añadir Producto
+      </button>
+    </div>
+
+    <!-- TABLA CARRITO -->
+    <div class="overflow-x-auto flex-grow border border-gray-700 rounded mb-6" role="region" aria-live="polite" aria-label="Carrito de productos">
+      <table class="w-full text-left border-collapse text-sm">
+        <thead class="bg-green-800 text-white sticky top-0 z-10">
+          <tr>
+            <th class="border px-3 py-2 w-2/5">Producto</th>
+            <th class="border px-3 py-2 text-center">Cantidad</th>
+            <th class="border px-3 py-2 text-right">Precio Unitario</th>
+            <th class="border px-3 py-2 text-right">Subtotal</th>
+            <th class="border px-3 py-2 text-center">Eliminar</th>
+          </tr>
+        </thead>
+        <tbody id="carrito-body" class="bg-gray-800"></tbody>
+        <tfoot>
+          <tr class="bg-green-900 font-bold text-lg text-white sticky bottom-0">
+            <td colspan="3" class="text-right px-3 py-2">Total:</td>
+            <td class="text-right px-3 py-2" id="total-general">$0.00</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- CAMPOS OCULTOS PARA FORM -->
+    <div id="campos-productos"></div>
+
+    <!-- BOTONES -->
+    <div class="mt-auto pt-4 flex justify-between items-center border-t border-gray-700">
+      <div>
+        <button type="button" id="btn-imprimir" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded shadow transition" title="Reimprimir ticket de venta" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" class="inline h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 9V7a4 4 0 00-8 0v2m-2 6v2a4 4 0 008 0v-2m-6-4h6" />
+          </svg>
+          Reimprimir Ticket
+        </button>
+      </div>
+      <div class="flex gap-4">
+        <a href="{% url 'ventas:lista_ventas' %}" class="py-3 px-6 border border-green-500 text-green-300 rounded hover:bg-green-800 font-semibold transition">
+          Cancelar
+        </a>
+        <button type="submit"
+                class="bg-green-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-green-700 transition shadow-lg"
+                id="btn-guardar">
+          💸 Cobrar
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <!-- PANEL LATERAL -->
+  <aside class="w-1/4 bg-gray-800 text-white p-6 rounded-lg shadow-lg flex flex-col h-full">
+    <div class="bg-green-900 p-4 rounded-lg mb-4">
+      <h2 class="text-xl font-bold text-center mb-2">Resumen de Venta</h2>
+      <p class="mb-1"><strong>Cajero:</strong> {{ request.user.username }}</p>
+      <p class="mb-1"><strong>Fecha:</strong> {{ hoy|date:"d/m/Y H:i" }}</p>
+    </div>
+    
+    <div class="bg-gray-700 p-4 rounded-lg mb-4 flex-grow-0">
+      <p class="text-xl font-bold text-green-400 mb-2">Total:</p>
+      <p class="text-3xl font-bold text-center" id="total-general-lateral">$0.00</p>
+    </div>
+    
+    <div class="bg-blue-900 p-4 rounded-lg mt-auto">
+      <h3 class="font-bold text-center mb-2">Instrucciones al Cajero</h3>
+      <ul class="text-sm space-y-2">
+        <li class="flex items-start">
+          <svg class="h-5 w-5 mt-0.5 mr-2 flex-shrink-0 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12l2 2 4-4m5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Verificar precios y cantidades
+        </li>
+        <li class="flex items-start">
+          <svg class="h-5 w-5 mt-0.5 mr-2 flex-shrink-0 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <rect x="2" y="7" width="20" height="10" rx="2" ry="2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <line x1="2" y1="11" x2="22" y2="11" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Confirmar método de pago
+        </li>
+        <li class="flex items-start">
+          <svg class="h-5 w-5 mt-0.5 mr-2 flex-shrink-0 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 9V7a4 4 0 00-8 0v2m-4 4v2a4 4 0 008 0v-2m-6-4h6" />
+          </svg>
+          Revisar cambio en efectivo
+        </li>
+      </ul>
+      <div class="mt-3 p-2 bg-blue-800 rounded text-center text-xs italic">
+        Ante cualquier duda, contactar al administrador
+      </div>
+    </div>
+  </aside>
+
+  <!-- SONIDO OPCIONAL -->
+  <audio id="beep" src="{% static 'beep.mp3' %}" preload="auto"></audio>
+
+  <script>
+    const inputProducto = document.getElementById("buscar-producto");
+    const listaSugerencias = document.getElementById("lista-sugerencias");
+    const btnAgregar = document.getElementById("btn-agregar");
+    const totalLateral = document.getElementById("total-general-lateral");
+    const metodoPagoInput = document.getElementById("metodo_pago_real");
+    const camposPago = document.getElementById("campos-pago");
+    const btnImprimir = document.getElementById("btn-imprimir");
+    const formVenta = document.getElementById("form-venta");
+    const ultimoVentaIdInput = document.getElementById("ultimo_venta_id");
+
+    let carrito = [];
+    let sugerencias = [];
+    let indiceSeleccionado = -1;
+    let lastVentaId = ultimoVentaIdInput.value || null;
+
+    // Función para actualizar el botón imprimir
+    function actualizarBotonImprimir() {
+      btnImprimir.disabled = carrito.length === 0 && !lastVentaId;
+    }
+
+    // Función para generar el ticket en una ventana emergente
+    async function generarTicket(ventaId) {
+      try {
+        const response = await fetch(`/ventas/venta/${ventaId}/ticket/data/`);
+        if (!response.ok) throw new Error("Error al obtener datos del ticket");
+        const data = await response.json();
+
+        const contenidoTicket = `
+          <html>
+            <head>
+              <title>Ticket de Venta #${data.venta.id}</title>
+              <style>
+                body { font-family: monospace; padding: 10px; font-size: 12px; }
+                h2 { text-align: center; color: green; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td { border-bottom: 1px dashed #ccc; padding: 8px; text-align: left; }
+                tfoot td { font-weight: bold; }
+                .center { text-align: center; }
+              </style>
+            </head>
+            <body>
+              <h2>Supermercado ERP</h2>
+              <p class="center">Ticket de Venta #${data.venta.id}</p>
+              <p><strong>Fecha:</strong> ${data.venta.fecha}</p>
+              <p><strong>Usuario:</strong> ${data.venta.usuario}</p>
+              <p><strong>Método de pago:</strong> ${data.venta.metodo_pago}</p>
+              <hr>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Cant.</th>
+                    <th>Precio Unit.</th>
+                    <th>Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${data.detalles.map(d => `
+                    <tr>
+                      <td>${d.producto_nombre}</td>
+                      <td>${d.cantidad}</td>
+                      <td>$${parseFloat(d.producto_precio).toFixed(2)}</td>
+                      <td>$${parseFloat(d.subtotal).toFixed(2)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="3">Total:</td>
+                    <td>$${parseFloat(data.venta.total).toFixed(2)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+              <p><strong>Fecha de impresión:</strong> ${data.hoy}</p>
+            </body>
+          </html>
+        `;
+
+        const ventanaImpresion = window.open("", "TicketVenta", "width=400,height=600,scrollbars=yes");
+        if (!ventanaImpresion) {
+          alert("Por favor, permite ventanas emergentes para imprimir el ticket.");
+          return;
+        }
+        ventanaImpresion.document.write(contenidoTicket);
+        ventanaImpresion.document.close();
+        ventanaImpresion.focus();
+        ventanaImpresion.print();
+        ventanaImpresion.close();
+      } catch (error) {
+        alert("Error al generar el ticket: " + error.message);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+      }
+
+      // Verificar si hay venta_id en la URL para abrir el ticket automáticamente
+      const urlParams = new URLSearchParams(window.location.search);
+      const ventaId = urlParams.get('venta_id');
+      if (ventaId) {
+        lastVentaId = ventaId;
+        ultimoVentaIdInput.value = ventaId;
+        setTimeout(() => {
+          generarTicket(ventaId);
+          history.replaceState(null, '', window.location.pathname);
+        }, 500);
+      }
+      actualizarBotonImprimir();
+    });
+
+    // Manejar el botón Reimprimir
+    btnImprimir.addEventListener("click", () => {
+      if (!lastVentaId) {
+        alert("No hay venta para reimprimir.");
+        return;
+      }
+      generarTicket(lastVentaId);
+    });
+
+    // Manejar el envío del formulario para actualizar lastVentaId
+    formVenta.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        const formData = new FormData(formVenta);
+        const response = await fetch(formVenta.action, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+          },
+        });
+        if (!response.ok) throw new Error("Error al guardar la venta");
+        const redirectUrl = response.url;
+        const urlParams = new URLSearchParams(redirectUrl.split('?')[1] || '');
+        const ventaId = urlParams.get('venta_id');
+        if (ventaId) {
+          lastVentaId = ventaId;
+          ultimoVentaIdInput.value = ventaId;
+          generarTicket(ventaId);
+          history.replaceState(null, '', window.location.pathname);
+        }
+        // Continuar con la redirección
+        window.location.href = redirectUrl;
+      } catch (error) {
+        alert("Error al procesar la venta: " + error.message);
+      }
+    });
+
+    function generarCamposPago(metodo) {
+      camposPago.innerHTML = "";
+
+      if (metodo === "Efectivo") {
+        camposPago.innerHTML = `
+          <div>
+            <label class="block mb-1">Monto entregado:</label>
+            <input type="number" step="0.01" name="monto_efectivo" id="monto_efectivo"
+                  class="w-full bg-gray-800 border border-gray-600 p-2 rounded"
+                  placeholder="Ej. 100.00" required>
+          </div>
+          <div>
+            <label class="block mb-1">Cambio:</label>
+            <input type="text" id="cambio" class="w-full bg-gray-800 border border-gray-600 p-2 rounded text-green-400" readonly>
+          </div>
+        `;
+      }
+
+      if (metodo === "Tarjeta" || metodo === "Tarjeta Débito" || metodo === "Transferencia") {
+        camposPago.innerHTML = `
+          <div>
+            <label class="block mb-1">${metodo === "Transferencia" ? "Referencia de transferencia" : "Número de tarjeta"}:</label>
+            <input type="text" name="numero_tarjeta" maxlength="19"
+                  class="w-full bg-gray-800 border border-gray-600 p-2 rounded"
+                  placeholder="${metodo === "Transferencia" ? "Referencia" : "XXXX-XXXX-XXXX-1234"}" required>
+          </div>
+        `;
+      }
+
+      if (metodo === "Mixto") {
+        camposPago.innerHTML = `
+          <div>
+            <label class="block mb-1">Monto en efectivo:</label>
+            <input type="number" step="0.01" name="mixto_efectivo" id="mixto_efectivo"
+                  class="w-full bg-gray-800 border border-gray-600 p-2 rounded" required>
+          </div>
+          <div>
+            <label class="block mb-1">Monto con otros (tarjeta/transferencia):</label>
+            <input type="number" step="0.01" name="mixto_tarjeta" id="mixto_tarjeta"
+                  class="w-full bg-gray-800 border border-gray-600 p-2 rounded" required>
+          </div>
+        `;
+      }
+    }
+
+    document.querySelectorAll(".metodo-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const metodoActual = metodoPagoInput.value;
+        const metodoNuevo = btn.dataset.metodo;
+
+        if (metodoActual === metodoNuevo) {
+          camposPago.innerHTML = "";
+          metodoPagoInput.value = "";
+          btn.classList.remove("ring-2", "ring-white");
+          btn.setAttribute("aria-pressed", "false");
+        } else {
+          metodoPagoInput.value = metodoNuevo;
+          document.querySelectorAll(".metodo-btn").forEach(b => {
+            b.classList.remove("ring-2", "ring-white");
+            b.setAttribute("aria-pressed", "false");
+          });
+          btn.classList.add("ring-2", "ring-white");
+          btn.setAttribute("aria-pressed", "true");
+          generarCamposPago(metodoNuevo);
+        }
+      });
+    });
+
+    inputProducto.addEventListener("input", () => {
+      indiceSeleccionado = -1;
+      cargarSugerencias();
+    });
+
+    inputProducto.addEventListener("keydown", e => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        indiceSeleccionado = (indiceSeleccionado + 1) % sugerencias.length;
+        actualizarSeleccion();
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        indiceSeleccionado = (indiceSeleccionado - 1 + sugerencias.length) % sugerencias.length;
+        actualizarSeleccion();
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (indiceSeleccionado >= 0) {
+          seleccionarProducto(sugerencias[indiceSeleccionado]);
+        } else {
+          agregarProducto();
+        }
+      } else if (e.key === "Escape") {
+        listaSugerencias.classList.add("hidden");
+      }
+    });
+
+    listaSugerencias.addEventListener("mousedown", e => {
+      const li = e.target.closest("li[data-index]");
+      if (li) {
+        const i = Number(li.dataset.index);
+        seleccionarProducto(sugerencias[i]);
+      }
+    });
+
+    function actualizarSeleccion() {
+      const items = listaSugerencias.querySelectorAll("li[data-index]");
+      items.forEach((item, i) => {
+        if (i === indiceSeleccionado) {
+          item.classList.add("bg-green-200");
+          item.scrollIntoView({ block: "nearest" });
+        } else {
+          item.classList.remove("bg-green-200");
+        }
+      });
+    }
+
+    function seleccionarProducto(producto) {
+      inputProducto.value = producto.nombre;
+      listaSugerencias.classList.add("hidden");
+      inputProducto.focus();
+    }
+
+    async function cargarSugerencias() {
+      const texto = inputProducto.value.trim();
+      if (texto.length < 2) {
+        listaSugerencias.innerHTML = "";
+        listaSugerencias.classList.add("hidden");
+        return;
+      }
+
+      try {
+        const res = await fetch("{% url 'ventas:producto_info_nombre' %}?nombre=" + encodeURIComponent(texto));
+        if (!res.ok) throw new Error("Error");
+        const data = await res.json();
+        sugerencias = Array.isArray(data) ? data : [data];
+
+        if (sugerencias.length === 0) {
+          listaSugerencias.innerHTML = '<li class="p-2 text-gray-500">No se encontraron productos</li>';
+          listaSugerencias.classList.remove("hidden");
+          return;
+        }
+
+        listaSugerencias.innerHTML = sugerencias.map((p, i) => `
+          <li data-index="${i}" role="option" aria-selected="${i === indiceSeleccionado}" tabindex="-1"
+            class="cursor-pointer px-4 py-2 hover:bg-green-100 ${i === indiceSeleccionado ? "bg-green-200" : ""}">
+            ${p.nombre} — $${p.precio.toFixed(2)} — Stock: ${p.stock}
+          </li>
+        `).join("");
+        listaSugerencias.classList.remove("hidden");
+      } catch {
+        listaSugerencias.innerHTML = "";
+        listaSugerencias.classList.add("hidden");
+      }
+    }
+
+    async function agregarProducto() {
+      const nombre = inputProducto.value.trim();
+      if (!nombre) return;
+
+      const existente = carrito.find((p) => p.nombre.toLowerCase() === nombre.toLowerCase());
+      if (existente) {
+        if (existente.cantidad + 1 > existente.stock) {
+          alert("Stock insuficiente.");
+          return;
+        }
+        existente.cantidad++;
+        renderTabla();
+        inputProducto.value = "";
+        document.getElementById("beep").play();
+        return;
+      }
+
+      try {
+        const res = await fetch("{% url 'ventas:producto_info_nombre' %}?nombre=" + encodeURIComponent(nombre));
+        if (!res.ok) return alert("Producto no encontrado.");
+        const data = await res.json();
+        const producto = Array.isArray(data) ? data[0] : data;
+
+        if (producto.stock < 1) {
+          alert("Producto sin stock.");
+          return;
+        }
+
+        carrito.push({
+          id: producto.id,
+          nombre: producto.nombre,
+          precio: producto.precio,
+          cantidad: 1,
+          stock: producto.stock,
+        });
+        renderTabla();
+        inputProducto.value = "";
+        document.getElementById("beep").play();
+      } catch {
+        alert("Error al buscar producto.");
+      }
+    }
+
+    btnAgregar.addEventListener("click", agregarProducto);
+
+    function renderTabla() {
+      const body = document.getElementById("carrito-body");
+      const campos = document.getElementById("campos-productos");
+      const totalDOM = document.getElementById("total-general");
+
+      body.innerHTML = "";
+      campos.innerHTML = "";
+
+      let total = 0;
+
+      carrito.forEach((item, index) => {
+        const subtotal = item.precio * item.cantidad;
+        total += subtotal;
+
+        body.innerHTML += `
+          <tr>
+            <td class="px-3 py-2">${item.nombre}</td>
+            <td class="text-center">
+              <input type="number" min="1" max="${item.stock}" value="${item.cantidad}" data-index="${index}"
+                    class="cantidad-input bg-gray-700 text-white border border-gray-600 rounded px-2 py-1 w-20 text-center" aria-label="Cantidad de ${item.nombre}">
+            </td>
+            <td class="text-right px-3 py-2">$${item.precio.toFixed(2)}</td>
+            <td class="text-right px-3 py-2">$${subtotal.toFixed(2)}</td>
+            <td class="text-center px-3 py-2">
+              <button type="button" class="eliminar-btn text-red-500 hover:text-red-700" aria-label="Eliminar ${item.nombre}">
+                &times;
+              </button>
+            </td>
+          </tr>
+        `;
+
+        campos.innerHTML += `
+          <input type="hidden" name="productos[${index}][id]" value="${item.id}">
+          <input type="hidden" name="productos[${index}][cantidad]" value="${item.cantidad}" class="input-cantidad-${index}">
+        `;
+      });
+
+      totalDOM.textContent = `$${total.toFixed(2)}`;
+      totalLateral.textContent = `$${total.toFixed(2)}`;
+
+      actualizarBotonImprimir();
+
+      document.querySelectorAll(".cantidad-input").forEach(input => {
+        input.addEventListener("change", (e) => {
+          const idx = e.target.dataset.index;
+          let val = parseInt(e.target.value);
+          if (isNaN(val) || val < 1) val = 1;
+          if (val > carrito[idx].stock) val = carrito[idx].stock;
+          carrito[idx].cantidad = val;
+          renderTabla();
+        });
+      });
+
+      document.querySelectorAll(".eliminar-btn").forEach((btn, i) => {
+        btn.addEventListener("click", () => {
+          carrito.splice(i, 1);
+          renderTabla();
+        });
+      });
+    }
+
+    renderTabla();
+
+    document.addEventListener("input", () => {
+      const total = parseFloat(document.getElementById("total-general").textContent.replace('$', '')) || 0;
+      const monto = parseFloat(document.getElementById("monto_efectivo")?.value) || 0;
+      const cambioInput = document.getElementById("cambio");
+      const cambio = monto - total;
+      if (cambioInput) {
+        cambioInput.value = cambio >= 0 ? `$${cambio.toFixed(2)}` : "Falta efectivo";
+      }
+    });
+  </script>
+{% endblock %}

@@ -1,0 +1,454 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}ERP Supermercado{% endblock %}</title>
+
+  <!-- Tailwind CSS compilado local -->
+  <link href="{% static 'css/styles.css' %}" rel="stylesheet" />
+<link href="{% static 'css/custom.css' %}" rel="stylesheet">
+  <!-- DataTables CSS (sin Bootstrap) -->
+  <link rel="stylesheet" href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest" onload="window.lucideReady = true;"></script>
+
+  <!-- Custom CSS para checkboxes -->
+  <link href="{% static 'css/custom.css' %}" rel="stylesheet" />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+    /* Body y Tipografía */
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #181a1f, #111317);
+      color: #f5f5f5;
+      line-height: 1.6;
+      min-height: 100vh;
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Clases de acento */
+    .text-acento { color: #a3e635; }
+    .bg-acento { background-color: #166534; }
+    .bg-soft { background-color: #22272e; }
+    .text-muted { color: #999ca0; }
+
+    /* Enlaces y botones */
+    a, button {
+      transition: color 0.3s ease, background-color 0.3s ease, transform 0.15s ease;
+      outline-offset: 2px;
+      position: relative;
+      padding-bottom: 0.25rem;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      font-weight: 600;
+      border-radius: 0.375rem;
+    }
+    a:hover, button:hover {
+      color: #d9f99d;
+      transform: scale(1.05);
+    }
+    a:focus-visible, button:focus-visible {
+      outline: 3px solid #a3e635;
+      outline-offset: 3px;
+      outline-radius: 0.25rem;
+      box-shadow: 0 0 8px #a3e635;
+    }
+
+    /* Navbar */
+    nav {
+      position: sticky;
+      top: 0;
+      background: linear-gradient(90deg, #22272e 0%, #1b1f23 100%);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.85);
+      z-index: 50;
+      user-select: none;
+      border-bottom: 1px solid #3f4a56;
+    }
+    nav a {
+      position: relative;
+      padding-bottom: 0.25rem;
+      font-weight: 600;
+      color: #a3e635;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    nav a::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 0;
+      height: 2px;
+      background-color: #a3e635;
+      transition: width 0.3s ease;
+      border-radius: 1px;
+    }
+    nav a:hover::after,
+    nav a:focus-visible::after {
+      width: 100%;
+    }
+
+    /* Contenedor general */
+    .container {
+      max-width: 1280px;
+      margin-left: auto;
+      margin-right: auto;
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    /* Main container */
+    main.container {
+      background: linear-gradient(145deg, #2a303a, #1e2229);
+      border-radius: 0.75rem;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.9);
+      padding: 2.5rem;
+      min-height: 75vh;
+      user-select: text;
+      color: #e0e6ea;
+    }
+
+    /* Alertas */
+    .alert {
+      position: relative;
+      padding: 1rem 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.7);
+      margin-bottom: 1.25rem;
+      animation: fadeIn 0.4s ease forwards;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .alert-error { background-color: #b91c1c; color: white; }
+    .alert-success { background-color: #15803d; color: white; }
+    .alert-info { background-color: #374151; color: white; }
+
+    /* Botón cerrar alerta */
+    .alert button.close-btn {
+      position: relative;
+      background: rgba(255,255,255,0.12);
+      border-radius: 9999px;
+      width: 1.8rem;
+      height: 1.8rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 1.2rem;
+      line-height: 1;
+      padding: 0;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      user-select: none;
+    }
+    .alert button.close-btn:hover,
+    .alert button.close-btn:focus-visible {
+      background: #a3e635;
+      color: #1e1e1e;
+      outline: none;
+    }
+
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(-10px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+
+    /* Footer */
+    footer {
+      background: linear-gradient(90deg, #1b1f23 0%, #2a303a 100%);
+      border-top: 1px solid #444;
+      font-size: 0.875rem;
+      color: #9ca3af;
+      padding: 1rem 0;
+      user-select: none;
+    }
+
+    /* Scrollbar */
+    body::-webkit-scrollbar {
+      width: 8px;
+    }
+    body::-webkit-scrollbar-track {
+      background: #22272e;
+    }
+    body::-webkit-scrollbar-thumb {
+      background-color: #a3e635;
+      border-radius: 10px;
+      border: 2px solid #22272e;
+    }
+
+    /* Iconos Lucide */
+    [data-lucide] {
+      transform: scale(0.8);
+      opacity: 0;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    /* Titulares */
+    h1, h2, h3 {
+      font-weight: 700;
+      color: #a3e635;
+      margin-bottom: 1rem;
+      user-select: text;
+    }
+
+    /* Botón scroll top */
+    #btn-scroll-top {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background-color: #166534;
+      color: #f5f5f5;
+      padding: 0.75rem;
+      border-radius: 9999px;
+      box-shadow: 0 4px 12px rgba(22, 101, 52, 0.6);
+      opacity: 0.85;
+      cursor: pointer;
+      border: none;
+      display: none;
+      z-index: 60;
+      transition: opacity 0.3s ease;
+      user-select: none;
+    }
+    #btn-scroll-top:hover,
+    #btn-scroll-top:focus-visible {
+      opacity: 1;
+      outline: 3px solid #a3e635;
+      outline-offset: 3px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col overflow-x-hidden">
+
+  <!-- Navbar -->
+  <nav role="navigation" aria-label="Menú principal">
+    <div class="container flex justify-between items-center py-4">
+
+      <!-- Logo / Título -->
+      <a href="/" class="text-2xl font-semibold text-acento flex items-center gap-2 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-400" aria-label="Ir a página principal">
+        <i data-lucide="shopping-cart" class="w-6 h-6" aria-hidden="true"></i>
+        <span>Supermercado ERP</span>
+      </a>
+
+      <!-- Botón hamburguesa para móviles -->
+      <button id="btn-menu-toggle" aria-label="Abrir menú principal" aria-expanded="false" aria-controls="navbar-menu"
+        class="md:hidden flex items-center justify-center w-10 h-10 text-acento hover:text-lime-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-400 rounded">
+        <i data-lucide="menu" class="w-6 h-6" aria-hidden="true"></i>
+      </button>
+
+      <!-- Menú -->
+      <div id="navbar-menu" class="md:flex md:items-center md:gap-6 text-sm" role="menubar">
+
+        {% if user.is_authenticated %}
+          <!-- Menú de Caja para Cajeros, Encargados y Gerentes -->
+          {% if 'Cajero' in grupos_usuario or 'Gerente' in grupos_usuario or 'Encargado' in grupos_usuario %}
+          <div class="relative group" role="menuitem" tabindex="0" aria-haspopup="true" aria-expanded="false">
+            <button
+              class="flex items-center gap-1 hover:text-lime-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-400"
+              aria-haspopup="true" aria-expanded="false"
+              id="menu-caja-button"
+              aria-controls="menu-caja">
+              <i data-lucide="dollar-sign" class="w-5 h-5" aria-hidden="true"></i>
+              Caja
+              {% if saldo_caja_actual is not None %}
+                <span class="ml-2 font-semibold text-green-400" aria-label="Saldo en caja">
+                  ${{ saldo_caja_actual|floatformat:2 }}
+                </span>
+              {% else %}
+                <span class="ml-2 text-gray-500 italic" aria-label="Caja cerrada o no disponible">(cerrada)</span>
+              {% endif %}
+              <i data-lucide="chevron-down" class="w-4 h-4" aria-hidden="true"></i>
+            </button>
+            <div
+              id="menu-caja"
+              class="absolute hidden bg-[#22272e] mt-1 rounded shadow-lg min-w-[180px] z-50"
+              role="menu"
+              aria-labelledby="menu-caja-button"
+            >
+              <a href="{% url 'ventas:estado_caja_actual' %}" class="block px-4 py-2 text-sm hover:bg-lime-700 focus:bg-lime-700 focus:outline-none" role="menuitem" tabindex="-1">
+                Estado de caja
+              </a>
+              <a href="{% url 'ventas:abrir_caja' %}" class="block px-4 py-2 text-sm hover:bg-lime-700 focus:bg-lime-700 focus:outline-none" role="menuitem" tabindex="-1">
+                Abrir caja
+              </a>
+              <a href="{% url 'ventas:cerrar_caja' %}" class="block px-4 py-2 text-sm hover:bg-lime-700 focus:bg-lime-700 focus:outline-none" role="menuitem" tabindex="-1">
+                Cerrar caja
+              </a>
+              <a href="{% url 'ventas:movimientos_caja' %}" class="block px-4 py-2 text-sm hover:bg-lime-700 focus:bg-lime-700 focus:outline-none" role="menuitem" tabindex="-1">
+                Movimientos
+              </a>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Menú específico para Gerentes -->
+          {% if 'Gerente' in grupos_usuario %}
+            <a href="{% url 'accounts:listar_usuarios' %}" class="flex items-center gap-1 hover:text-lime-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-400" role="menuitem" tabindex="0">
+              <i data-lucide="users" class="w-5 h-5" aria-hidden="true"></i>Usuarios
+            </a>
+            <a href="{% url 'ventas:lista_ventas' %}" class="flex items-center gap-1 hover:text-lime-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-400" role="menuitem" tabindex="0">
+              <i data-lucide="credit-card" class="w-5 h-5" aria-hidden="true"></i>Ventas
+            </a>
+            <a href="{% url 'productos:lista' %}" class="flex items-center gap-1 hover:text-lime-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-400" role="menuitem" tabindex="0">
+              <i data-lucide="package" class="w-5 h-5" aria-hidden="true"></i>Productos
+            </a>
+          {% elif 'Encargado' in grupos_usuario %}
+            <a href="{% url 'ventas:lista_ventas' %}" class="flex items-center gap-1 hover:text-lime-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-400" role="menuitem" tabindex="0">
+              <i data-lucide="credit-card" class="w-5 h-5" aria-hidden="true"></i>Ventas
+            </a>
+            <a href="{% url 'productos:lista' %}" class="flex items-center gap-1 hover:text-lime-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-400" role="menuitem" tabindex="0">
+              <i data-lucide="package" class="w-5 h-5" aria-hidden="true"></i>Productos
+            </a>
+          {% elif 'Cajero' in grupos_usuario %}
+            <a href="{% url 'ventas:crear_venta' %}" class="flex items-center gap-1 hover:text-lime-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-400" role="menuitem" tabindex="0">
+              <i data-lucide="scan-line" class="w-5 h-5" aria-hidden="true"></i>Registrar venta
+            </a>
+          {% endif %}
+
+          <div class="ml-6 hidden md:flex items-center gap-2 text-gray-400 text-sm whitespace-nowrap" aria-label="Información del usuario">
+            <i data-lucide="user" class="w-5 h-5" aria-hidden="true"></i>
+            <span>
+              {{ user.username }} — 
+              {% if grupos_usuario %}
+                Roles: {{ grupos_usuario|join:", " }}
+              {% else %}
+                <em>Sin roles</em>
+              {% endif %}
+            </span>
+          </div>
+
+          <form action="{% url 'logout' %}" method="post" class="ml-4" role="form" aria-label="Cerrar sesión">
+            {% csrf_token %}
+            <button type="submit" aria-label="Cerrar sesión"
+              class="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-400 transition">
+              <i data-lucide="log-out" class="w-5 h-5" aria-hidden="true"></i>Salir
+            </button>
+          </form>
+        {% else %}
+          <a href="{% url 'login' %}" class="flex items-center gap-1 text-lime-400 hover:text-lime-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-400 transition" role="menuitem" tabindex="0">
+            <i data-lucide="log-in" class="w-5 h-5" aria-hidden="true"></i>Iniciar sesión
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <!-- Contenido principal -->
+  <main class="container mx-auto px-4 py-6 flex-grow max-w-7xl w-full overflow-x-hidden">
+    {% if messages %}
+      <div class="space-y-4 mb-6" role="region" aria-live="polite" aria-atomic="true">
+        {% for message in messages %}
+          <div class="alert
+            {% if message.tags == 'error' %}alert-error
+            {% elif message.tags == 'success' %}alert-success
+            {% else %}alert-info
+            {% endif %} flex justify-between items-center" tabindex="0">
+            <div>{{ message }}</div>
+            <button class="close-btn" aria-label="Cerrar mensaje" onclick="this.parentElement.style.display='none'">&times;</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Botón para scroll top -->
+  <button id="btn-scroll-top" aria-label="Ir arriba" title="Ir arriba" type="button">
+    <i data-lucide="arrow-up" aria-hidden="true"></i>
+  </button>
+
+  <!-- Pie de página -->
+  <footer class="text-center py-4 text-gray-400 mt-auto" role="contentinfo">
+    &copy; {{ now|date:"Y" }} Supermercado ERP. Todos los derechos reservados.
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+  <script src="//cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+  <script>
+    function initLucideIcons() {
+      if (window.lucide && window.lucideReady) {
+        lucide.createIcons();
+        document.querySelectorAll('[data-lucide]').forEach(icon => {
+          setTimeout(() => {
+            icon.style.opacity = 1;
+            icon.style.transform = 'scale(1)';
+          }, 100);
+        });
+      } else {
+        setTimeout(initLucideIcons, 50);
+      }
+    }
+
+    initLucideIcons();
+
+    const btnScrollTop = document.getElementById('btn-scroll-top');
+    window.addEventListener('scroll', () => {
+      btnScrollTop.style.display = window.scrollY > 300 ? 'block' : 'none';
+    });
+    btnScrollTop.addEventListener('click', () => {
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    });
+
+    // DataTables en español
+    $(document).ready(function () {
+      $('table.dataTable').DataTable({
+        language: {
+          url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+        },
+        responsive: true,
+        autoWidth: false,
+        pageLength: 10,
+        lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Todos"]]
+      });
+    });
+
+    // Toggle menú hamburguesa móvil
+    document.addEventListener('DOMContentLoaded', () => {
+      const btnMenuToggle = document.getElementById('btn-menu-toggle');
+      const navbarMenu = document.getElementById('navbar-menu');
+
+      btnMenuToggle.addEventListener('click', () => {
+        const expanded = btnMenuToggle.getAttribute('aria-expanded') === 'true';
+        btnMenuToggle.setAttribute('aria-expanded', !expanded);
+        navbarMenu.classList.toggle('hidden');
+      });
+
+      // Menú Caja toggle
+      const btnCaja = document.getElementById('menu-caja-button');
+      const menuCaja = document.getElementById('menu-caja');
+
+      if (btnCaja && menuCaja) {
+        btnCaja.addEventListener('click', (e) => {
+          e.preventDefault();
+          menuCaja.classList.toggle('hidden');
+          const expanded = btnCaja.getAttribute('aria-expanded') === 'true';
+          btnCaja.setAttribute('aria-expanded', !expanded);
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!btnCaja.contains(e.target) && !menuCaja.contains(e.target)) {
+            menuCaja.classList.add('hidden');
+            btnCaja.setAttribute('aria-expanded', 'false');
+          }
+        });
+      }
+    });
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

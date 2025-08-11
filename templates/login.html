@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Iniciar sesión{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-gradient-to-br from-[#1c1f24] via-[#16181c] to-[#1a1d22] rounded-2xl p-10 shadow-xl border border-gray-700 mt-12 animate-fadeIn" role="main" aria-label="Formulario de inicio de sesión">
+  <h2 class="text-3xl font-extrabold text-gray-100 text-center mb-8 select-text drop-shadow-sm">Iniciar sesión</h2>
+
+  {% if form.non_field_errors %}
+    <div class="alert alert-error bg-red-700 border border-red-600 text-red-200 rounded-md py-3 px-4 text-center font-semibold animate-pulse" role="alert" tabindex="0" aria-live="assertive" aria-atomic="true">
+      Usuario o contraseña incorrectos.
+    </div>
+  {% endif %}
+
+  <form method="post" class="space-y-8" novalidate>
+    {% csrf_token %}
+    <fieldset class="space-y-6" aria-describedby="login-instruction">
+      <legend id="login-instruction" class="sr-only">Ingrese su nombre de usuario y contraseña para iniciar sesión</legend>
+
+      {% for field in form %}
+        <div>
+          <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-gray-300 mb-2 select-text">
+            {{ field.label }}
+          </label>
+          <div class="relative">
+            {% if field.name == 'username' %}
+              <i data-lucide="user" class="absolute left-3 top-3.5 w-6 h-6 text-gray-500 pointer-events-none"></i>
+            {% elif field.name == 'password' %}
+              <i data-lucide="lock" class="absolute left-3 top-3.5 w-6 h-6 text-gray-500 pointer-events-none"></i>
+            {% endif %}
+            {{ field|add_class:"w-full bg-[#22272e] border border-gray-600 rounded-lg px-12 py-3 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 shadow-sm transition duration-300" }}
+          </div>
+          {% if field.errors %}
+            <p class="text-red-400 text-sm mt-1 font-semibold select-text" role="alert">{{ field.errors.0 }}</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </fieldset>
+
+    <div class="flex justify-between items-center text-sm text-gray-400 select-text">
+      <label class="inline-flex items-center gap-2 cursor-pointer" for="id_remember">
+        <input id="id_remember" type="checkbox" name="remember" class="accent-green-500 focus:ring-2 focus:ring-green-400 focus:ring-offset-1 rounded" />
+        Recordarme
+      </label>
+      <a href="{% url 'accounts:password_reset' %}" class="hover:text-green-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-green-400 transition" tabindex="0">
+        ¿Olvidaste tu contraseña?
+      </a>
+    </div>
+
+    <button type="submit" class="w-full bg-green-500 hover:bg-green-600 focus-visible:outline focus-visible:outline-4 focus-visible:outline-green-400 text-gray-900 py-3 rounded-lg font-semibold shadow-md transition-transform active:scale-95 select-none">
+      Entrar
+    </button>
+  </form>
+</div>
+{% endblock %}

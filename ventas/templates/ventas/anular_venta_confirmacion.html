@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Anular Venta #{{ venta.id }}{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-gradient-to-tr from-[#1f2937] via-[#111827] to-[#1f2937] rounded-xl p-8 shadow-2xl border border-gray-700 select-none">
+  <h1 class="text-3xl font-extrabold mb-6 text-red-500 flex items-center gap-3">
+    <i data-lucide="x-circle" class="w-8 h-8"></i>
+    Anular Venta #{{ venta.id }}
+  </h1>
+
+  <p class="mb-8 text-gray-300 leading-relaxed">
+    ¿Estás seguro que deseas anular esta venta? <strong class="font-semibold">Esta acción no se puede deshacer.</strong>
+  </p>
+
+  <dl class="mb-8 text-gray-400 space-y-2">
+    <div>
+      <dt class="inline font-semibold">Fecha:</dt>
+      <dd class="inline">{{ venta.fecha|date:"Y-m-d H:i" }}</dd>
+    </div>
+    <div>
+      <dt class="inline font-semibold">Total:</dt>
+      <dd class="inline">${{ venta.total }}</dd>
+    </div>
+  </dl>
+
+  <form method="post" class="flex flex-wrap gap-4" aria-label="Confirmar anulación de venta">
+    {% csrf_token %}
+    <button type="submit"
+      class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 rounded-xl shadow-lg transition focus-visible:outline focus-visible:outline-4 focus-visible:outline-red-400">
+      <i data-lucide="x-circle" class="w-6 h-6"></i> Sí, anular
+    </button>
+
+    <a href="{% url 'ventas:lista_ventas' %}"
+      class="inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-800 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition focus-visible:outline focus-visible:outline-4 focus-visible:outline-gray-500">
+      <i data-lucide="corner-down-left" class="w-6 h-6"></i> Cancelar y volver
+    </a>
+  </form>
+</div>
+{% endblock %}

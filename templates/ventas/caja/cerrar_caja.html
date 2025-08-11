@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Cerrar Caja{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto mt-12 p-8 rounded-2xl shadow-xl border border-red-500
+            bg-gradient-to-br from-[#1e293b] via-[#0f172a] to-[#1e293b] text-gray-200">
+
+  <!-- Encabezado -->
+  <div class="flex items-center gap-3 mb-6 select-none">
+    <i data-lucide="lock" class="w-7 h-7 stroke-red-400"></i>
+    <h1 class="text-3xl font-bold text-red-400">Cerrar Caja</h1>
+  </div>
+
+  {% if messages %}
+    <div class="mb-4 space-y-2">
+      {% for message in messages %}
+        <div class="px-4 py-2 rounded text-sm font-medium 
+          {% if message.tags == 'success' %}bg-green-200 text-green-800
+          {% elif message.tags == 'error' or message.tags == 'danger' %}bg-red-200 text-red-800
+          {% elif message.tags == 'warning' %}bg-yellow-200 text-yellow-800
+          {% else %}bg-gray-100 text-gray-800{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if caja %}
+    <div class="mb-6 space-y-2 text-sm text-gray-300">
+      <p><strong class="text-lime-400">Saldo inicial:</strong> ${{ caja.saldo_inicial }}</p>
+      <p><strong class="text-lime-400">Fecha de apertura:</strong> {{ caja.fecha_apertura|date:"d/m/Y H:i" }}</p>
+    </div>
+
+    <form id="formCerrarCaja" method="post">
+      {% csrf_token %}
+      <button
+        type="submit"
+        class="w-full inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-lg transition-shadow shadow-md"
+      >
+        <i data-lucide="lock" class="w-5 h-5"></i>
+        <span>Cerrar Caja</span>
+      </button>
+
+      <div class="mt-4 text-center">
+        <a href="{% url 'ventas:estado_caja_actual' %}" class="text-gray-400 hover:text-gray-200 hover:underline inline-flex items-center gap-1">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i> Cancelar
+        </a>
+      </div>
+    </form>
+  {% else %}
+    <p class="text-gray-400">No hay caja abierta para cerrar.</p>
+    <a href="{% url 'ventas:abrir_caja' %}" class="text-lime-400 hover:text-lime-300 hover:underline mt-2 inline-block">
+      <i data-lucide="plus-circle" class="w-4 h-4 inline-block mr-1"></i> Abrir caja
+    </a>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    initLucideIcons();
+
+    const form = document.getElementById('formCerrarCaja');
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      Swal.fire({
+        title: '¿Cerrar caja?',
+        text: 'Una vez cerrada, no podrás realizar más movimientos hasta abrir otra.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, cerrar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        background: '#1e293b',
+        color: '#f3f4f6',
+        customClass: {
+          popup: 'rounded-xl shadow-lg',
+          confirmButton: 'bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded',
+          cancelButton: 'bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded'
+        }
+      }).then(result => {
+        if (result.isConfirmed) {
+          form.submit();
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

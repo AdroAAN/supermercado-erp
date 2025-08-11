@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar usuario{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-extrabold mb-8 text-green-600 tracking-tight">Registrar usuario</h1>
+
+<form method="post" class="max-w-md bg-gray-800 p-8 rounded-xl shadow-lg space-y-6" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    
+    <div>
+        {{ form.username.label_tag(attrs={"class": "block mb-1 font-semibold text-gray-200"}) }}
+        {{ form.username|add_class:"w-full rounded-md border border-gray-600 bg-gray-900 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition" }}
+        {% if form.username.errors %}
+            <p class="mt-1 text-red-500 text-sm font-medium">{{ form.username.errors|striptags }}</p>
+        {% endif %}
+    </div>
+
+    <div>
+        {{ form.email.label_tag(attrs={"class": "block mb-1 font-semibold text-gray-200"}) }}
+        {{ form.email|add_class:"w-full rounded-md border border-gray-600 bg-gray-900 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition" }}
+        {% if form.email.errors %}
+            <p class="mt-1 text-red-500 text-sm font-medium">{{ form.email.errors|striptags }}</p>
+        {% endif %}
+    </div>
+
+    <div>
+        {{ form.password1.label_tag(attrs={"class": "block mb-1 font-semibold text-gray-200"}) }}
+        {{ form.password1|add_class:"w-full rounded-md border border-gray-600 bg-gray-900 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition" }}
+        {% if form.password1.errors %}
+            <p class="mt-1 text-red-500 text-sm font-medium">{{ form.password1.errors|striptags }}</p>
+        {% endif %}
+    </div>
+
+    <div>
+        {{ form.password2.label_tag(attrs={"class": "block mb-1 font-semibold text-gray-200"}) }}
+        {{ form.password2|add_class:"w-full rounded-md border border-gray-600 bg-gray-900 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition" }}
+        {% if form.password2.errors %}
+            <p class="mt-1 text-red-500 text-sm font-medium">{{ form.password2.errors|striptags }}</p>
+        {% endif %}
+    </div>
+
+    <div>
+        {{ form.groups.label_tag(attrs={"class": "block mb-1 font-semibold text-gray-200"}) }}
+        {{ form.groups|add_class:"w-full rounded-md border border-gray-600 bg-gray-900 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition" }}
+        {% if form.groups.errors %}
+            <p class="mt-1 text-red-500 text-sm font-medium">{{ form.groups.errors|striptags }}</p>
+        {% endif %}
+    </div>
+
+    <div class="flex items-center gap-4">
+        <button type="submit" 
+            class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg shadow-md transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1">
+            Registrar
+        </button>
+        <a href="{% url 'accounts:lista_usuarios' %}" 
+           class="text-gray-400 hover:text-gray-200 transition underline-offset-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 rounded">
+           Cancelar
+        </a>
+    </div>
+</form>
+{% endblock %}
